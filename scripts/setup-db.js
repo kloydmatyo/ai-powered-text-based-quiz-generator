@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 require('dotenv').config({ path: '.env.local' });
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/quiz-system';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/quiz-generator';
 
 async function setupDatabase() {
   try {

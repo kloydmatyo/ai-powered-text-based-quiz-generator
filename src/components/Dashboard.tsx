@@ -10,6 +10,11 @@ interface Quiz {
   description: string;
   createdAt: string;
   updatedAt: string;
+  userId?: {
+    _id: string;
+    username: string;
+    email: string;
+  };
 }
 
 const Dashboard: React.FC = () => {
@@ -91,6 +96,10 @@ const Dashboard: React.FC = () => {
         const data = await response.json();
         setQuizzes(quizzes.map(quiz => quiz._id === editingQuiz._id ? data.quiz : quiz));
         setEditingQuiz(null);
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Update quiz failed:', response.status, errorData);
+        alert(`Failed to update quiz: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error updating quiz:', error);
@@ -111,6 +120,10 @@ const Dashboard: React.FC = () => {
 
       if (response.ok) {
         setQuizzes(quizzes.filter(quiz => quiz._id !== quizId));
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Delete quiz failed:', response.status, errorData);
+        alert(`Failed to delete quiz: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error deleting quiz:', error);
@@ -161,12 +174,14 @@ const Dashboard: React.FC = () => {
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-white">My Quizzes</h2>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="bg-primary hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
-              Create New Quiz
-            </button>
+            {user?.role === 'instructor' && (
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="bg-primary hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              >
+                Create New Quiz
+              </button>
+            )}
           </div>
 
           {/* Create/Edit Quiz Form */}
@@ -239,8 +254,12 @@ const Dashboard: React.FC = () => {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {quizzes.length === 0 ? (
               <div className="col-span-full text-center py-12">
-                <p className="text-gray-400 text-lg">No quizzes created yet.</p>
-                <p className="text-gray-500 text-sm mt-2">Click "Create New Quiz" to get started!</p>
+                <p className="text-gray-400 text-lg">
+                  {user?.role === 'instructor' ? 'No quizzes created yet.' : 'No quizzes available.'}
+                </p>
+                {user?.role === 'instructor' && (
+                  <p className="text-gray-500 text-sm mt-2">Click "Create New Quiz" to get started!</p>
+                )}
               </div>
             ) : (
               quizzes.map((quiz) => (
@@ -249,28 +268,35 @@ const Dashboard: React.FC = () => {
                   {quiz.description && (
                     <p className="text-gray-300 mb-4">{quiz.description}</p>
                   )}
-                  <p className="text-gray-400 text-sm mb-4">
-                    Created: {new Date(quiz.createdAt).toLocaleDateString()}
-                  </p>
+                  <div className="text-gray-400 text-sm mb-4">
+                    <p>Created: {new Date(quiz.createdAt).toLocaleDateString()}</p>
+                    {user?.role === 'learner' && quiz.userId && (
+                      <p>By: {quiz.userId.username || 'Unknown'}</p>
+                    )}
+                  </div>
                   <div className="flex space-x-2">
-                    <button 
-                      onClick={() => setEditingQuiz(quiz)}
-                      className="bg-secondary hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
-                    >
-                      Edit
-                    </button>
+                    {user?.role === 'instructor' && (
+                      <button 
+                        onClick={() => setEditingQuiz(quiz)}
+                        className="bg-secondary hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
+                      >
+                        Edit
+                      </button>
+                    )}
                     <button 
                       onClick={() => setSelectedQuiz(quiz)}
                       className="bg-primary hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm"
                     >
-                      Questions
+                      {user?.role === 'instructor' ? 'Questions' : 'Take Quiz'}
                     </button>
-                    <button
-                      onClick={() => deleteQuiz(quiz._id)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
-                    >
-                      Delete
-                    </button>
+                    {user?.role === 'instructor' && (
+                      <button
+                        onClick={() => deleteQuiz(quiz._id)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               ))

@@ -35,13 +35,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check if user is logged in on app start
     const token = localStorage.getItem('token');
     if (token) {
-      // You could verify the token here
-      // For now, we'll just check if it exists
-      setLoading(false);
+      // Verify the token and get user data
+      verifyToken(token);
     } else {
       setLoading(false);
     }
   }, []);
+
+  const verifyToken = async (token: string) => {
+    try {
+      const response = await fetch('/api/auth/verify', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      } else {
+        // Token is invalid, remove it
+        localStorage.removeItem('token');
+      }
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      localStorage.removeItem('token');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     try {
