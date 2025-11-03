@@ -5,13 +5,13 @@ import Quiz from '@/models/Quiz';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
     
     const userId = request.headers.get('userId');
-    const { id } = params;
+    const { id } = await params;
     const { questionText, answerChoices, correctAnswer } = await request.json();
 
     // Validation
@@ -80,13 +80,13 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
     
     const userId = request.headers.get('userId');
-    const { id } = params;
+    const { id } = await params;
 
     // Find the question and verify ownership through quiz
     const question = await Question.findById(id).populate('quizId');

@@ -45,10 +45,10 @@ export async function GET(
       } : null
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Debug quiz error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error?.message || 'Unknown error' },
       { status: 500 }
     );
   }

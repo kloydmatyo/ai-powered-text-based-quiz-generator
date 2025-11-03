@@ -5,13 +5,13 @@ import Quiz from '@/models/Quiz';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { quizId: string } }
+  { params }: { params: Promise<{ quizId: string }> }
 ) {
   try {
     await connectDB();
     
     const userId = request.headers.get('userId');
-    const { quizId } = params;
+    const { quizId } = await params;
 
     // Verify quiz belongs to user
     const quiz = await Quiz.findOne({ _id: quizId, userId });
