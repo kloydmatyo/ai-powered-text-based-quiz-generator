@@ -174,14 +174,24 @@ const Dashboard: React.FC = () => {
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-white">My Quizzes</h2>
-            {user?.role === 'instructor' && (
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="bg-primary hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                Create New Quiz
-              </button>
-            )}
+            <div className="flex space-x-3">
+              {user?.role === 'instructor' && (
+                <>
+                  <a
+                    href="/text-analyzer"
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    AI Text Analyzer
+                  </a>
+                  <button
+                    onClick={() => setShowCreateForm(true)}
+                    className="bg-primary hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    Create New Quiz
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Create/Edit Quiz Form */}
