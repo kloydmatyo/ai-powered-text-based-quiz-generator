@@ -32,6 +32,10 @@ export async function POST(request: NextRequest) {
         text = await extractFromTxt(file);
       } else if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
         console.log('Processing as PDF file');
+        // Check if PDF processing is available in this environment
+        if (process.env.NODE_ENV === 'production' && !process.env.ENABLE_PDF_PROCESSING) {
+          throw new Error('PDF processing is not available in this deployment environment. Please convert your PDF to DOCX or TXT format.');
+        }
         text = await extractFromPdf(file);
       } else if (
         fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
@@ -90,22 +94,32 @@ async function extractFromTxt(file: File): Promise<string> {
 async function extractFromPdf(file: File): Promise<string> {
   console.log(`Processing PDF file: ${file.name}, size: ${file.size} bytes`);
   
+  // Check if we're in a server environment that supports PDF processing
+  if (typeof window !== 'undefined') {
+    throw new Error('PDF processing is only available on the server. Please refresh the page and try again.');
+  }
+  
   try {
     // Set up canvas polyfills for pdf-parse
     if (typeof global !== 'undefined') {
       // Polyfill canvas dependencies for server environment
       try {
-        const { createCanvas, ImageData } = require('canvas');
-        (global as any).HTMLCanvasElement = createCanvas().constructor;
-        (global as any).ImageData = ImageData;
-        (global as any).DOMMatrix = class {
-          constructor() {
-            (this as any).a = 1; (this as any).b = 0; (this as any).c = 0; 
-            (this as any).d = 1; (this as any).e = 0; (this as any).f = 0;
-          }
-        };
-        (global as any).Path2D = class {};
-        console.log('Canvas polyfills set up successfully');
+        const canvas = await import('canvas').catch(() => null);
+        if (canvas) {
+          const { createCanvas, ImageData } = canvas;
+          (global as any).HTMLCanvasElement = createCanvas(1, 1).constructor;
+          (global as any).ImageData = ImageData;
+          (global as any).DOMMatrix = class {
+            constructor() {
+              (this as any).a = 1; (this as any).b = 0; (this as any).c = 0; 
+              (this as any).d = 1; (this as any).e = 0; (this as any).f = 0;
+            }
+          };
+          (global as any).Path2D = class {};
+          console.log('Canvas polyfills set up successfully');
+        } else {
+          console.log('Canvas not available, PDF processing may be limited');
+        }
       } catch (canvasError: any) {
         console.log('Canvas polyfill setup failed, continuing without:', canvasError.message);
       }
@@ -131,11 +145,25 @@ async function extractFromPdf(file: File): Promise<string> {
     // Try to load pdf-parse with better error handling
     let pdfParse;
     try {
-      pdfParse = require('pdf-parse');
+      // Use dynamic import for better compatibility
+      const pdfParseModule = await import('pdf-parse').catch(() => {
+        // Fallback to require if dynamic import fails
+        try {
+          return require('pdf-parse');
+        } catch {
+          return null;
+        }
+      });
+      
+      if (!pdfParseModule) {
+        throw new Error('PDF processing library not available');
+      }
+      
+      pdfParse = pdfParseModule.default || pdfParseModule;
       console.log('PDF-parse loaded successfully, type:', typeof pdfParse);
-    } catch (requireError) {
-      console.error('PDF-parse require failed:', requireError);
-      throw new Error('PDF processing library not available. Please convert to DOCX or TXT format.');
+    } catch (requireError: any) {
+      console.error('PDF-parse loading failed:', requireError.message);
+      throw new Error('PDF processing is temporarily unavailable. Please convert your PDF to DOCX or TXT format.');
     }
     
     // Parse PDF with options to minimize compatibility issues
