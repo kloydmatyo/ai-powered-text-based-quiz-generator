@@ -1,7 +1,10 @@
+export type DifficultyLevel = 'easy' | 'moderate' | 'challenging';
+
 interface QuestionSet {
   multipleChoice: MultipleChoiceQuestion[];
   trueFalse: TrueFalseQuestion[];
   fillInTheBlank: FillInTheBlankQuestion[];
+  identification: IdentificationQuestion[];
 }
 
 interface MultipleChoiceQuestion {
@@ -20,6 +23,11 @@ interface FillInTheBlankQuestion {
   answer: string;
 }
 
+interface IdentificationQuestion {
+  question: string;
+  answer: string;
+}
+
 export class AITextAnalyzer {
   private apiKey: string;
 
@@ -27,13 +35,12 @@ export class AITextAnalyzer {
     this.apiKey = apiKey;
   }
 
-  async analyzeText(text: string): Promise<QuestionSet> {
-    // Simulate AI analysis - replace with actual AI API call
-    const questions = this.generateQuestionsFromText(text);
+  async analyzeText(text: string, difficulty: DifficultyLevel = 'moderate'): Promise<QuestionSet> {
+    const questions = this.generateQuestionsFromText(text, difficulty);
     return questions;
   }
 
-  private generateQuestionsFromText(text: string): QuestionSet {
+  private generateQuestionsFromText(text: string, difficulty: DifficultyLevel): QuestionSet {
     // Clean and prepare text
     const cleanText = this.cleanText(text);
     const sentences = this.extractSentences(cleanText);
@@ -42,11 +49,26 @@ export class AITextAnalyzer {
     const keyTerms = this.extractKeyTerms(words);
     const namedEntities = this.extractNamedEntities(cleanText);
 
+    // Adjust question counts based on difficulty
+    const questionCounts = this.getQuestionCounts(difficulty);
+
     return {
-      multipleChoice: this.generateMultipleChoice(sentences, paragraphs, keyTerms, namedEntities),
-      trueFalse: this.generateTrueFalse(sentences, keyTerms),
-      fillInTheBlank: this.generateFillInTheBlank(sentences, keyTerms, namedEntities)
+      multipleChoice: this.generateMultipleChoice(sentences, paragraphs, keyTerms, namedEntities, difficulty).slice(0, questionCounts.mcq),
+      trueFalse: this.generateTrueFalse(sentences, keyTerms, difficulty).slice(0, questionCounts.trueFalse),
+      fillInTheBlank: this.generateFillInTheBlank(sentences, keyTerms, namedEntities, difficulty).slice(0, questionCounts.fillBlank),
+      identification: this.generateIdentification(cleanText, keyTerms, namedEntities, difficulty).slice(0, questionCounts.identification)
     };
+  }
+
+  private getQuestionCounts(difficulty: DifficultyLevel): { mcq: number; trueFalse: number; fillBlank: number; identification: number } {
+    switch (difficulty) {
+      case 'easy':
+        return { mcq: 3, trueFalse: 4, fillBlank: 3, identification: 3 };
+      case 'moderate':
+        return { mcq: 4, trueFalse: 6, fillBlank: 4, identification: 4 };
+      case 'challenging':
+        return { mcq: 5, trueFalse: 8, fillBlank: 5, identification: 5 };
+    }
   }
 
   private cleanText(text: string): string {
@@ -123,7 +145,8 @@ export class AITextAnalyzer {
     sentences: string[], 
     paragraphs: string[], 
     keyTerms: string[], 
-    namedEntities: string[]
+    namedEntities: string[],
+    difficulty: DifficultyLevel
   ): MultipleChoiceQuestion[] {
     const questions: MultipleChoiceQuestion[] = [];
     
@@ -137,16 +160,10 @@ export class AITextAnalyzer {
         sentence.toLowerCase().includes(term.toLowerCase())
       ) || keyTerms[0];
 
-      const questionTypes = [
-        `According to the text, what is true about ${relevantTerm}?`,
-        `Based on the information provided, which statement about ${relevantTerm} is correct?`,
-        `The text indicates that ${relevantTerm}:`,
-        `Which of the following best describes ${relevantTerm} according to the passage?`
-      ];
-
+      const questionTypes = this.getQuestionTypesByDifficulty(relevantTerm, difficulty);
       const question = questionTypes[index % questionTypes.length];
       const correctOption = this.simplifyStatement(sentence);
-      const wrongOptions = this.generateBetterWrongOptions(correctOption, keyTerms, namedEntities);
+      const wrongOptions = this.generateBetterWrongOptions(correctOption, keyTerms, namedEntities, difficulty);
       
       const allOptions = [correctOption, ...wrongOptions];
       const shuffledOptions = this.shuffleArray([...allOptions]);
@@ -158,7 +175,7 @@ export class AITextAnalyzer {
       });
     });
 
-    return questions.slice(0, 3);
+    return questions;
   }
 
   private simplifyStatement(sentence: string): string {
@@ -177,7 +194,30 @@ export class AITextAnalyzer {
     return shuffled;
   }
 
-  private generateTrueFalse(sentences: string[], keyTerms: string[]): TrueFalseQuestion[] {
+  private getQuestionTypesByDifficulty(term: string, difficulty: DifficultyLevel): string[] {
+    switch (difficulty) {
+      case 'easy':
+        return [
+          `What is ${term}?`,
+          `According to the text, ${term} is:`,
+          `Which statement about ${term} is correct?`
+        ];
+      case 'moderate':
+        return [
+          `According to the text, what is true about ${term}?`,
+          `Based on the information provided, which statement about ${term} is correct?`,
+          `The text indicates that ${term}:`
+        ];
+      case 'challenging':
+        return [
+          `Which of the following best describes ${term} according to the passage?`,
+          `Analyze the relationship between ${term} and the main concept discussed:`,
+          `What can be inferred about ${term} from the text?`
+        ];
+    }
+  }
+
+  private generateTrueFalse(sentences: string[], keyTerms: string[], difficulty: DifficultyLevel): TrueFalseQuestion[] {
     const questions: TrueFalseQuestion[] = [];
     
     // Select sentences with key terms for better relevance
@@ -193,7 +233,7 @@ export class AITextAnalyzer {
       });
 
       // Create false statement by modifying the original
-      const modifiedSentence = this.createFalseStatement(sentence, keyTerms);
+      const modifiedSentence = this.createFalseStatement(sentence, keyTerms, difficulty);
       if (modifiedSentence !== sentence) {
         questions.push({
           statement: modifiedSentence,
@@ -202,13 +242,8 @@ export class AITextAnalyzer {
       }
     });
 
-    // Add some general false statements
-    const generalFalseStatements = [
-      `${keyTerms[0] || 'The main topic'} is not mentioned in the text`,
-      `The text provides no information about ${keyTerms[1] || 'the subject'}`,
-      `${keyTerms[2] || 'The concept'} is described as having no significance`
-    ];
-
+    // Add difficulty-appropriate false statements
+    const generalFalseStatements = this.getGeneralFalseStatements(keyTerms, difficulty);
     generalFalseStatements.forEach(statement => {
       questions.push({
         statement,
@@ -216,13 +251,34 @@ export class AITextAnalyzer {
       });
     });
 
-    return questions.slice(0, 6);
+    return questions;
+  }
+
+  private getGeneralFalseStatements(keyTerms: string[], difficulty: DifficultyLevel): string[] {
+    switch (difficulty) {
+      case 'easy':
+        return [
+          `${keyTerms[0] || 'The main topic'} is not mentioned in the text`
+        ];
+      case 'moderate':
+        return [
+          `${keyTerms[0] || 'The main topic'} is not mentioned in the text`,
+          `The text provides no information about ${keyTerms[1] || 'the subject'}`
+        ];
+      case 'challenging':
+        return [
+          `${keyTerms[0] || 'The main topic'} is not mentioned in the text`,
+          `The text provides no information about ${keyTerms[1] || 'the subject'}`,
+          `${keyTerms[2] || 'The concept'} is described as having no significance`
+        ];
+    }
   }
 
   private generateFillInTheBlank(
     sentences: string[], 
     keyTerms: string[], 
-    namedEntities: string[]
+    namedEntities: string[],
+    difficulty: DifficultyLevel
   ): FillInTheBlankQuestion[] {
     const questions: FillInTheBlankQuestion[] = [];
     const allTerms = [...keyTerms, ...namedEntities];
@@ -260,7 +316,84 @@ export class AITextAnalyzer {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  private generateBetterWrongOptions(correctOption: string, keyTerms: string[], namedEntities: string[]): string[] {
+  private generateIdentification(
+    text: string,
+    keyTerms: string[],
+    namedEntities: string[],
+    difficulty: DifficultyLevel
+  ): IdentificationQuestion[] {
+    const questions: IdentificationQuestion[] = [];
+    
+    // Generate identification questions based on named entities
+    namedEntities.forEach((entity, index) => {
+      if (questions.length >= 5) return;
+      
+      const contextSentence = this.findContextForEntity(text, entity);
+      if (!contextSentence) return;
+      
+      const questionTemplates = this.getIdentificationTemplates(difficulty);
+      const template = questionTemplates[index % questionTemplates.length];
+      
+      questions.push({
+        question: template.replace('{context}', contextSentence).replace('{entity}', entity),
+        answer: entity
+      });
+    });
+    
+    // Add term-based identification questions
+    keyTerms.slice(0, 3).forEach((term, index) => {
+      if (questions.length >= 5) return;
+      
+      const contextSentence = this.findContextForEntity(text, term);
+      if (!contextSentence) return;
+      
+      questions.push({
+        question: `Identify the key concept described as: "${contextSentence.substring(0, 100)}..."`,
+        answer: term
+      });
+    });
+    
+    return questions;
+  }
+
+  private getIdentificationTemplates(difficulty: DifficultyLevel): string[] {
+    switch (difficulty) {
+      case 'easy':
+        return [
+          'Identify the person/concept mentioned: {context}',
+          'What is being described in: {context}',
+          'Name the term that refers to: {context}'
+        ];
+      case 'moderate':
+        return [
+          'Based on this description, identify the entity: {context}',
+          'Which person/concept is characterized by: {context}',
+          'Identify what is being referred to: {context}'
+        ];
+      case 'challenging':
+        return [
+          'Analyze and identify the entity described: {context}',
+          'From the contextual clues, determine what is being discussed: {context}',
+          'Identify the specific term or concept that best matches: {context}'
+        ];
+    }
+  }
+
+  private findContextForEntity(text: string, entity: string): string | null {
+    const sentences = text.split(/[.!?]+/).map(s => s.trim());
+    const entityLower = entity.toLowerCase();
+    
+    for (const sentence of sentences) {
+      if (sentence.toLowerCase().includes(entityLower) && sentence.length > 20) {
+        // Return sentence without the entity itself for identification
+        return sentence.replace(new RegExp(`\\b${this.escapeRegex(entity)}\\b`, 'gi'), '______');
+      }
+    }
+    
+    return null;
+  }
+
+  private generateBetterWrongOptions(correctOption: string, keyTerms: string[], namedEntities: string[], difficulty: DifficultyLevel): string[] {
     const wrongOptions: string[] = [];
     
     // Generate plausible but incorrect alternatives
@@ -273,15 +406,16 @@ export class AITextAnalyzer {
       `${namedEntities[1] || 'The mentioned entity'} has contradictory properties`
     ];
 
-    // Select 3 random templates
+    // Adjust complexity based on difficulty
+    const numOptions = difficulty === 'easy' ? 3 : 3;
     const selectedTemplates = templates
       .sort(() => Math.random() - 0.5)
-      .slice(0, 3);
+      .slice(0, numOptions);
 
     return selectedTemplates;
   }
 
-  private createFalseStatement(sentence: string, keyTerms: string[]): string {
+  private createFalseStatement(sentence: string, keyTerms: string[], difficulty: DifficultyLevel): string {
     const modifications = [
       (s: string) => s.replace(/\bis\b/gi, 'is not'),
       (s: string) => s.replace(/\bare\b/gi, 'are not'),

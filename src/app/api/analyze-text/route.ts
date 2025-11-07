@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { aiAnalyzer } from '@/lib/ai-service';
+import { bytezAI, DifficultyLevel } from '@/lib/bytez-ai-service';
 
 export async function POST(request: NextRequest) {
   try {
-    const { text } = await request.json();
+    const body = await request.json();
+    const { text, difficulty = 'moderate' } = body;
 
     if (!text || typeof text !== 'string') {
       return NextResponse.json(
@@ -26,16 +27,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Analyze the text and generate questions
-    const questions = await aiAnalyzer.analyzeText(text);
+    // Validate difficulty level
+    const validDifficulties: DifficultyLevel[] = ['easy', 'moderate', 'challenging'];
+    if (!validDifficulties.includes(difficulty)) {
+      return NextResponse.json(
+        { error: 'Invalid difficulty level. Must be: easy, moderate, or challenging' },
+        { status: 400 }
+      );
+    }
+
+    console.log(`📝 Generating questions with difficulty: ${difficulty}`);
+    console.log(`📄 Text length: ${text.length} characters`);
+
+    // Use Bytez AI service (with automatic fallback to rule-based generation)
+    const result = await bytezAI.generateQuestions(text, difficulty as DifficultyLevel);
+    const { questions, method } = result;
+
+    const totalQuestions = 
+      questions.multipleChoice.length +
+      questions.trueFalse.length +
+      questions.fillInTheBlank.length +
+      questions.identification.length;
+
+    console.log(`✅ Generated ${totalQuestions} questions successfully using ${method.toUpperCase()} method`);
 
     return NextResponse.json({
       success: true,
       questions,
       metadata: {
+        difficulty,
         textLength: text.length,
         wordCount: text.split(/\s+/).length,
-        generatedAt: new Date().toISOString()
+        totalQuestions,
+        generatedAt: new Date().toISOString(),
+        generationMethod: method, // 'ai' or 'rule-based'
+        aiPowered: method === 'ai'
       }
     });
 
