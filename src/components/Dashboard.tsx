@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import QuestionManager from './QuestionManager';
+import QuizTaker from './QuizTaker';
 
 interface Quiz {
   _id: string;
@@ -490,12 +491,22 @@ const Dashboard: React.FC = () => {
   }
 
   if (selectedQuiz) {
-    return (
-      <QuestionManager 
-        quiz={selectedQuiz} 
-        onBack={() => setSelectedQuiz(null)} 
-      />
-    );
+    // Show QuestionManager for instructors, QuizTaker for learners
+    if (user?.role === 'instructor') {
+      return (
+        <QuestionManager 
+          quiz={selectedQuiz} 
+          onBack={() => setSelectedQuiz(null)} 
+        />
+      );
+    } else {
+      return (
+        <QuizTaker 
+          quiz={selectedQuiz} 
+          onBack={() => setSelectedQuiz(null)} 
+        />
+      );
+    }
   }
 
   return (
