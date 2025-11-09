@@ -39,18 +39,26 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
   const fetchQuestions = async () => {
     try {
       const token = localStorage.getItem('token');
+      console.log('🔍 Fetching questions for quiz:', quiz._id);
+      
       const response = await fetch(`/api/questions/quiz/${quiz._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
+      console.log('📡 Response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Questions loaded:', data.questions.length);
         setQuestions(data.questions);
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Error response:', errorData);
       }
     } catch (error) {
-      console.error('Error fetching questions:', error);
+      console.error('❌ Error fetching questions:', error);
     } finally {
       setLoading(false);
     }
