@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { title, description } = await request.json();
+    const { title, description, difficulty, questionTypes } = await request.json();
 
     // Check if user is an instructor
     if (auth.user.role !== 'instructor') {
@@ -35,9 +35,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate difficulty
+    const validDifficulties = ['easy', 'moderate', 'challenging'];
+    if (difficulty && !validDifficulties.includes(difficulty)) {
+      return NextResponse.json(
+        { error: 'Invalid difficulty level. Must be: easy, moderate, or challenging' },
+        { status: 400 }
+      );
+    }
+
+    // Validate question types
+    const validQuestionTypes = ['multiple-choice', 'true-false', 'fill-in-blank'];
+    if (questionTypes && !Array.isArray(questionTypes)) {
+      return NextResponse.json(
+        { error: 'Question types must be an array' },
+        { status: 400 }
+      );
+    }
+    if (questionTypes && !questionTypes.every((type: string) => validQuestionTypes.includes(type))) {
+      return NextResponse.json(
+        { error: 'Invalid question type. Must be: multiple-choice, true-false, or fill-in-blank' },
+        { status: 400 }
+      );
+    }
+
     const quiz = new Quiz({
       title,
       description,
+      difficulty: difficulty || 'moderate',
+      questionTypes: questionTypes && questionTypes.length > 0 ? questionTypes : ['multiple-choice'],
       userId: auth.userId
     });
 

@@ -5,8 +5,9 @@ import React, { useState, useEffect } from 'react';
 interface Question {
   _id: string;
   questionText: string;
+  questionType?: 'multiple-choice' | 'true-false' | 'fill-in-blank';
   answerChoices: string[];
-  correctAnswer: number;
+  correctAnswer: number | string;
   quizId: string;
 }
 
@@ -24,7 +25,7 @@ interface QuizTakerProps {
 const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userAnswers, setUserAnswers] = useState<{ [key: string]: number }>({});
+  const [userAnswers, setUserAnswers] = useState<{ [key: string]: number | string }>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState<number | null>(null);
   const [showResults, setShowResults] = useState(false);
@@ -149,11 +150,11 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
     }
   };
 
-  const handleAnswerSelect = (questionId: string, answerIndex: number) => {
+  const handleAnswerSelect = (questionId: string, answer: number | string) => {
     if (!submitted) {
       setUserAnswers({
         ...userAnswers,
-        [questionId]: answerIndex
+        [questionId]: answer
       });
     }
   };
@@ -286,50 +287,94 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
 
         {/* Questions */}
         <div className="space-y-6">
-          {questions.map((question, index) => (
-            <div key={question._id} className="bg-gray-800 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">
-                Question {index + 1}: {question.questionText}
-              </h3>
-              <div className="space-y-3">
-                {question.answerChoices.map((choice, choiceIndex) => {
-                  const isSelected = userAnswers[question._id] === choiceIndex;
-                  const isCorrect = showResults && (question as any).correctAnswer === choiceIndex;
-                  const isWrong = showResults && isSelected && !isCorrect;
-
-                  return (
-                    <button
-                      key={choiceIndex}
-                      onClick={() => handleAnswerSelect(question._id, choiceIndex)}
+          {questions.map((question, index) => {
+            const questionType = question.questionType || 'multiple-choice';
+            
+            return (
+              <div key={question._id} className="bg-gray-800 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">
+                    Question {index + 1}: {question.questionText}
+                  </h3>
+                  <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">
+                    {questionType === 'multiple-choice' && 'Multiple Choice'}
+                    {questionType === 'true-false' && 'True/False'}
+                    {questionType === 'fill-in-blank' && 'Fill in the Blank'}
+                  </span>
+                </div>
+                
+                {questionType === 'fill-in-blank' ? (
+                  // Fill-in-blank input
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={userAnswers[question._id] as string || ''}
+                      onChange={(e) => handleAnswerSelect(question._id, e.target.value)}
                       disabled={submitted}
-                      className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
-                        isCorrect && showResults
-                          ? 'bg-green-900 border-green-500 text-white'
-                          : isWrong
-                          ? 'bg-red-900 border-red-500 text-white'
-                          : isSelected
-                          ? 'bg-indigo-900 border-indigo-500 text-white'
-                          : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
-                      } ${submitted ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                    >
-                      <div className="flex items-center">
-                        <span className="font-semibold mr-3">
-                          {String.fromCharCode(65 + choiceIndex)}.
-                        </span>
-                        <span>{choice}</span>
-                        {showResults && isCorrect && (
-                          <span className="ml-auto text-green-400">✓ Correct</span>
-                        )}
-                        {showResults && isWrong && (
-                          <span className="ml-auto text-red-400">✗ Wrong</span>
+                      placeholder="Type your answer here..."
+                      className="w-full p-4 rounded-lg border-2 bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-indigo-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                    />
+                    {showResults && (
+                      <div className="mt-2 p-3 bg-green-900 border border-green-500 rounded">
+                        <p className="text-green-200 text-sm">
+                          <strong>Correct Answer:</strong> {question.correctAnswer}
+                        </p>
+                        {userAnswers[question._id] && (
+                          <p className="text-white text-sm mt-1">
+                            <strong>Your Answer:</strong> {userAnswers[question._id]}
+                            {userAnswers[question._id] === question.correctAnswer ? (
+                              <span className="ml-2 text-green-400">✓ Correct</span>
+                            ) : (
+                              <span className="ml-2 text-red-400">✗ Wrong</span>
+                            )}
+                          </p>
                         )}
                       </div>
-                    </button>
-                  );
-                })}
+                    )}
+                  </div>
+                ) : (
+                  // Multiple choice and True/False buttons
+                  <div className="space-y-3">
+                    {question.answerChoices.map((choice, choiceIndex) => {
+                      const isSelected = userAnswers[question._id] === choiceIndex;
+                      const isCorrect = showResults && question.correctAnswer === choiceIndex;
+                      const isWrong = showResults && isSelected && !isCorrect;
+
+                      return (
+                        <button
+                          key={choiceIndex}
+                          onClick={() => handleAnswerSelect(question._id, choiceIndex)}
+                          disabled={submitted}
+                          className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
+                            isCorrect && showResults
+                              ? 'bg-green-900 border-green-500 text-white'
+                              : isWrong
+                              ? 'bg-red-900 border-red-500 text-white'
+                              : isSelected
+                              ? 'bg-indigo-900 border-indigo-500 text-white'
+                              : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+                          } ${submitted ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                        >
+                          <div className="flex items-center">
+                            <span className="font-semibold mr-3">
+                              {String.fromCharCode(65 + choiceIndex)}.
+                            </span>
+                            <span>{choice}</span>
+                            {showResults && isCorrect && (
+                              <span className="ml-auto text-green-400">✓ Correct</span>
+                            )}
+                            {showResults && isWrong && (
+                              <span className="ml-auto text-red-400">✗ Wrong</span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Submit Button */}

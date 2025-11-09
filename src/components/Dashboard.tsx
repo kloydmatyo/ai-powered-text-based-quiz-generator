@@ -28,6 +28,8 @@ const Dashboard: React.FC = () => {
   const [aiQuizData, setAiQuizData] = useState<{
     title: string;
     description: string;
+    difficulty: 'easy' | 'moderate' | 'challenging';
+    questionTypes: string[];
     questions: any[];
     sourceText: string;
   } | null>(null);
@@ -121,6 +123,8 @@ const Dashboard: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [step, setStep] = useState<'upload' | 'processing' | 'preview'>('upload');
+    const [difficulty, setDifficulty] = useState<'easy' | 'moderate' | 'challenging'>('moderate');
+    const [selectedQuestionTypes, setSelectedQuestionTypes] = useState<string[]>(['multiple-choice']);
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
       const uploadedFile = event.target.files?.[0];
@@ -166,18 +170,26 @@ const Dashboard: React.FC = () => {
         return;
       }
 
+      if (selectedQuestionTypes.length === 0) {
+        setError('Please select at least one question type.');
+        return;
+      }
+
       setStep('processing');
       setLoading(true);
       setError('');
 
       try {
-        // Generate questions using AI
+        // Generate questions using AI with selected difficulty
         const response = await fetch('/api/analyze-text', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ 
+            text,
+            difficulty 
+          }),
         });
 
         if (!response.ok) {
@@ -187,39 +199,44 @@ const Dashboard: React.FC = () => {
 
         const result = await response.json();
         
-        // Convert AI questions to quiz format (all as multiple choice for compatibility)
-        const questions = [
-          // Multiple choice questions (keep as is)
-          ...result.questions.multipleChoice.map((q: any) => ({
+        // Convert AI questions to quiz format based on selected types
+        const questions = [];
+        
+        // Multiple choice questions
+        if (selectedQuestionTypes.includes('multiple-choice')) {
+          questions.push(...result.questions.multipleChoice.map((q: any) => ({
             questionText: q.question,
+            questionType: 'multiple-choice',
             answerChoices: q.options,
-            correctAnswer: q.correctAnswer,
-            type: 'multiple-choice'
-          })),
-          // Convert True/False to multiple choice
-          ...result.questions.trueFalse.map((q: any) => ({
+            correctAnswer: q.correctAnswer
+          })));
+        }
+        
+        // True/False questions
+        if (selectedQuestionTypes.includes('true-false')) {
+          questions.push(...result.questions.trueFalse.map((q: any) => ({
             questionText: q.statement,
+            questionType: 'true-false',
             answerChoices: ['True', 'False'],
-            correctAnswer: q.answer ? 0 : 1,
-            type: 'true-false'
-          })),
-          // Convert Fill-in-the-blank to multiple choice with the answer and distractors
-          ...result.questions.fillInTheBlank.map((q: any) => {
-            const distractors = ['Option A', 'Option B', 'Option C'].filter(d => d !== q.answer);
-            const allOptions = [q.answer, ...distractors.slice(0, 3)];
-            const shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
-            return {
-              questionText: q.sentence.replace('______', '_____'),
-              answerChoices: shuffledOptions,
-              correctAnswer: shuffledOptions.indexOf(q.answer),
-              type: 'fill-blank'
-            };
-          })
-        ];
+            correctAnswer: q.answer ? 0 : 1
+          })));
+        }
+        
+        // Fill-in-the-blank questions
+        if (selectedQuestionTypes.includes('fill-in-blank')) {
+          questions.push(...result.questions.fillInTheBlank.map((q: any) => ({
+            questionText: q.sentence,
+            questionType: 'fill-in-blank',
+            answerChoices: [],
+            correctAnswer: q.answer
+          })));
+        }
 
         setAiQuizData({
           title: file?.name.replace(/\.[^/.]+$/, '') || 'AI Generated Quiz',
           description: `Quiz automatically generated from ${file?.name || 'uploaded content'}`,
+          difficulty,
+          questionTypes: selectedQuestionTypes,
           questions,
           sourceText: text
         });
@@ -274,19 +291,77 @@ const Dashboard: React.FC = () => {
               </div>
 
               {text && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Preview Content
-                  </label>
-                  <textarea
-                    value={text.substring(0, 200) + (text.length > 200 ? '...' : '')}
-                    readOnly
-                    className="w-full h-24 p-2 border border-gray-300 rounded text-sm bg-gray-50"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    {text.length} characters, {text.split(/\s+/).length} words
-                  </p>
-                </div>
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Preview Content
+                    </label>
+                    <textarea
+                      value={text.substring(0, 200) + (text.length > 200 ? '...' : '')}
+                      readOnly
+                      className="w-full h-24 p-2 border border-gray-300 rounded text-sm bg-gray-50"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {text.length} characters, {text.split(/\s+/).length} words
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Difficulty Level
+                    </label>
+                    <div className="flex gap-2">
+                      {(['easy', 'moderate', 'challenging'] as const).map((level) => (
+                        <button
+                          key={level}
+                          type="button"
+                          onClick={() => setDifficulty(level)}
+                          className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
+                            difficulty === level
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {level.charAt(0).toUpperCase() + level.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Question Types
+                    </label>
+                    <div className="space-y-2">
+                      {[
+                        { value: 'multiple-choice', label: 'Multiple Choice Questions (MCQs)' },
+                        { value: 'true-false', label: 'True or False' },
+                        { value: 'fill-in-blank', label: 'Fill in the Blank' }
+                      ].map((type) => (
+                        <label key={type.value} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedQuestionTypes.includes(type.value)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedQuestionTypes([...selectedQuestionTypes, type.value]);
+                              } else {
+                                setSelectedQuestionTypes(selectedQuestionTypes.filter(t => t !== type.value));
+                              }
+                            }}
+                            className="mr-2 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                          />
+                          <span className="text-sm text-gray-700">{type.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {selectedQuestionTypes.length === 0 && (
+                      <p className="text-xs text-red-600 mt-1">
+                        Please select at least one question type
+                      </p>
+                    )}
+                  </div>
+                </>
               )}
 
               {error && (
@@ -345,7 +420,9 @@ const Dashboard: React.FC = () => {
           },
           body: JSON.stringify({
             title: editableQuiz.title,
-            description: editableQuiz.description
+            description: editableQuiz.description,
+            difficulty: editableQuiz.difficulty,
+            questionTypes: editableQuiz.questionTypes
           }),
         });
 
@@ -366,6 +443,7 @@ const Dashboard: React.FC = () => {
             },
             body: JSON.stringify({
               questionText: question.questionText,
+              questionType: question.questionType,
               answerChoices: question.answerChoices,
               correctAnswer: question.correctAnswer,
               quizId
@@ -439,19 +517,25 @@ const Dashboard: React.FC = () => {
                   <div key={index} className="border border-gray-200 rounded p-4">
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-sm font-medium text-purple-600 uppercase">
-                        {question.type.replace('-', ' ')}
+                        {(question.questionType || 'multiple-choice').replace('-', ' ')}
                       </span>
                       <span className="text-sm text-gray-500">Question {index + 1}</span>
                     </div>
                     <p className="font-medium mb-2">{question.questionText}</p>
                     
-                    <div className="space-y-1">
-                      {question.answerChoices.map((option: string, optIndex: number) => (
-                        <div key={optIndex} className={`text-sm p-2 rounded ${optIndex === question.correctAnswer ? 'bg-green-100 text-green-800' : 'bg-gray-50'}`}>
-                          {String.fromCharCode(65 + optIndex)}. {option}
-                        </div>
-                      ))}
-                    </div>
+                    {question.questionType === 'fill-in-blank' ? (
+                      <div className="text-sm p-2 rounded bg-green-100 text-green-800">
+                        Answer: {question.correctAnswer}
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {question.answerChoices?.map((option: string, optIndex: number) => (
+                          <div key={optIndex} className={`text-sm p-2 rounded ${optIndex === question.correctAnswer ? 'bg-green-100 text-green-800' : 'bg-gray-50'}`}>
+                            {String.fromCharCode(65 + optIndex)}. {option}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

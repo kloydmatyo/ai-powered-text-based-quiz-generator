@@ -17,12 +17,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { questionText, answerChoices, correctAnswer, quizId } = await request.json();
+    const { questionText, questionType, answerChoices, correctAnswer, quizId } = await request.json();
 
     // Validation
-    if (!questionText || !answerChoices || correctAnswer === undefined || !quizId) {
+    if (!questionText || correctAnswer === undefined || !quizId) {
       return NextResponse.json(
-        { error: 'All fields are required: questionText, answerChoices, correctAnswer, quizId' },
+        { error: 'Required fields: questionText, correctAnswer, quizId' },
+        { status: 400 }
+      );
+    }
+
+    // Validate question type
+    const validQuestionTypes = ['multiple-choice', 'true-false', 'fill-in-blank'];
+    if (questionType && !validQuestionTypes.includes(questionType)) {
+      return NextResponse.json(
+        { error: 'Invalid question type. Must be: multiple-choice, true-false, or fill-in-blank' },
         { status: 400 }
       );
     }
@@ -44,26 +53,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate answer choices
-    if (!Array.isArray(answerChoices) || answerChoices.length < 2 || answerChoices.length > 6) {
-      return NextResponse.json(
-        { error: 'Answer choices must be an array with 2-6 options' },
-        { status: 400 }
-      );
-    }
+    // Validate answer choices based on question type
+    const qType = questionType || 'multiple-choice';
+    
+    if (qType === 'fill-in-blank') {
+      // Fill-in-blank doesn't need answer choices, just the correct answer as string
+      if (typeof correctAnswer !== 'string') {
+        return NextResponse.json(
+          { error: 'Fill-in-blank questions require correct answer as string' },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Multiple choice and true/false need answer choices
+      if (!Array.isArray(answerChoices) || answerChoices.length < 2) {
+        return NextResponse.json(
+          { error: 'Answer choices must be an array with at least 2 options' },
+          { status: 400 }
+        );
+      }
 
-    // Validate correct answer index
-    if (correctAnswer < 0 || correctAnswer >= answerChoices.length) {
-      return NextResponse.json(
-        { error: 'Correct answer index is out of range' },
-        { status: 400 }
-      );
+      if (qType === 'true-false' && answerChoices.length !== 2) {
+        return NextResponse.json(
+          { error: 'True/False questions must have exactly 2 answer choices' },
+          { status: 400 }
+        );
+      }
+
+      if (qType === 'multiple-choice' && (answerChoices.length < 2 || answerChoices.length > 6)) {
+        return NextResponse.json(
+          { error: 'Multiple choice questions must have 2-6 answer choices' },
+          { status: 400 }
+        );
+      }
+
+      // Validate correct answer index
+      if (typeof correctAnswer === 'number' && (correctAnswer < 0 || correctAnswer >= answerChoices.length)) {
+        return NextResponse.json(
+          { error: 'Correct answer index is out of range' },
+          { status: 400 }
+        );
+      }
     }
 
     // Create the question
     const question = new Question({
       questionText,
-      answerChoices,
+      questionType: qType,
+      answerChoices: answerChoices || [],
       correctAnswer,
       quizId
     });

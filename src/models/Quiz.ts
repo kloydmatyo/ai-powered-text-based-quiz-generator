@@ -4,8 +4,9 @@ export interface IQuiz extends Document {
   title: string;
   description: string;
   userId: mongoose.Types.ObjectId;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: 'easy' | 'moderate' | 'challenging';
   questionTypes: string[];
+  numberOfQuestions: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,8 +23,8 @@ const QuizSchema: Schema = new Schema({
   },
   difficulty: {
     type: String,
-    enum: ['easy', 'medium', 'hard'],
-    default: 'medium'
+    enum: ['easy', 'moderate', 'challenging'],
+    default: 'moderate'
   },
   questionTypes: {
     type: [String],
@@ -35,6 +36,12 @@ const QuizSchema: Schema = new Schema({
       },
       message: 'Invalid question type'
     }
+  },
+  numberOfQuestions: {
+    type: Number,
+    default: 10,
+    min: [1, 'Must have at least 1 question'],
+    max: [100, 'Cannot exceed 100 questions']
   },
   userId: {
     type: Schema.Types.ObjectId,
