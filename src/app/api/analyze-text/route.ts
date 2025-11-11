@@ -4,7 +4,7 @@ import { bytezAI, DifficultyLevel } from '@/lib/bytez-ai-service';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { text, difficulty = 'moderate' } = body;
+    const { text, difficulty = 'moderate', numberOfQuestions, questionTypes } = body;
 
     if (!text || typeof text !== 'string') {
       return NextResponse.json(
@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (text.length > 10000) {
+    if (text.length > 15000) {
       return NextResponse.json(
-        { error: 'Text is too long. Please limit to 10,000 characters.' },
+        { error: 'Text is too long. Please limit to 15,000 characters.' },
         { status: 400 }
       );
     }
@@ -36,11 +36,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`📝 Generating questions with difficulty: ${difficulty}`);
+    // Validate numberOfQuestions if provided
+    const numQuestions = numberOfQuestions || 10;
+    if (numQuestions < 1 || numQuestions > 100) {
+      return NextResponse.json(
+        { error: 'Number of questions must be between 1 and 100' },
+        { status: 400 }
+      );
+    }
+
+    console.log(`📝 Generating ${numQuestions} questions with difficulty: ${difficulty}`);
     console.log(`📄 Text length: ${text.length} characters`);
 
     // Use Bytez AI service (with automatic fallback to rule-based generation)
-    const result = await bytezAI.generateQuestions(text, difficulty as DifficultyLevel);
+    const result = await bytezAI.generateQuestions(
+      text, 
+      difficulty as DifficultyLevel,
+      numQuestions,
+      questionTypes
+    );
     const { questions, method } = result;
 
     const totalQuestions = 

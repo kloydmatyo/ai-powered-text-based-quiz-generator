@@ -49,20 +49,22 @@ export class BytezAIService {
 
   async generateQuestions(
     text: string,
-    difficulty: DifficultyLevel = 'moderate'
+    difficulty: DifficultyLevel = 'moderate',
+    numberOfQuestions: number = 10,
+    questionTypes?: string[]
   ): Promise<{ questions: QuestionSet; method: 'ai' | 'rule-based' }> {
     try {
       // Try using Bytez AI SDK
       console.log('🤖 Attempting AI-powered generation with Bytez.com SDK...');
       console.log('📦 Using model: openai/gpt-4.1');
-      const questions = await this.generateWithAI(text, difficulty);
+      const questions = await this.generateWithAI(text, difficulty, numberOfQuestions, questionTypes);
       console.log('✅ SUCCESS: Questions generated using AI (GPT-4.1 via Bytez)');
       return { questions, method: 'ai' };
     } catch (error) {
       console.warn('⚠️ AI generation failed, switching to rule-based fallback');
       console.error('Error details:', error);
       // Fallback to rule-based generation
-      const questions = this.generateWithRules(text, difficulty);
+      const questions = this.generateWithRules(text, difficulty, numberOfQuestions, questionTypes);
       console.log('✅ Questions generated using rule-based method (fallback)');
       return { questions, method: 'rule-based' };
     }
@@ -70,9 +72,11 @@ export class BytezAIService {
 
   private async generateWithAI(
     text: string,
-    difficulty: DifficultyLevel
+    difficulty: DifficultyLevel,
+    numberOfQuestions: number,
+    questionTypes?: string[]
   ): Promise<QuestionSet> {
-    const prompt = this.buildPrompt(text, difficulty);
+    const prompt = this.buildPrompt(text, difficulty, numberOfQuestions, questionTypes);
 
     console.log('📤 Sending request to Bytez AI...');
 
@@ -111,8 +115,13 @@ export class BytezAIService {
     return questions;
   }
 
-  private buildPrompt(text: string, difficulty: DifficultyLevel): string {
-    const counts = this.getQuestionCounts(difficulty);
+  private buildPrompt(
+    text: string, 
+    difficulty: DifficultyLevel,
+    numberOfQuestions: number,
+    questionTypes?: string[]
+  ): string {
+    const counts = this.distributeQuestions(numberOfQuestions, questionTypes);
     
     return `Analyze the following text and generate a structured questionnaire with exactly these counts:
 - ${counts.mcq} Multiple Choice Questions (4 options each, labeled A-D)
@@ -120,6 +129,7 @@ export class BytezAIService {
 - ${counts.fillBlank} Fill-in-the-Blank Questions
 - ${counts.identification} Identification Questions
 
+Total Questions Required: ${numberOfQuestions}
 Difficulty Level: ${difficulty}
 
 Text to analyze:
@@ -190,31 +200,70 @@ Requirements:
     }
   }
 
-  private getQuestionCounts(difficulty: DifficultyLevel): {
+  private distributeQuestions(
+    total: number,
+    questionTypes?: string[]
+  ): {
     mcq: number;
     trueFalse: number;
     fillBlank: number;
     identification: number;
   } {
-    switch (difficulty) {
-      case 'easy':
-        return { mcq: 3, trueFalse: 4, fillBlank: 3, identification: 3 };
-      case 'moderate':
-        return { mcq: 4, trueFalse: 6, fillBlank: 4, identification: 4 };
-      case 'challenging':
-        return { mcq: 5, trueFalse: 8, fillBlank: 5, identification: 5 };
+    // If no question types specified, distribute evenly across all types
+    if (!questionTypes || questionTypes.length === 0) {
+      const perType = Math.floor(total / 4);
+      const remainder = total % 4;
+      return {
+        mcq: perType + (remainder > 0 ? 1 : 0),
+        trueFalse: perType + (remainder > 1 ? 1 : 0),
+        fillBlank: perType + (remainder > 2 ? 1 : 0),
+        identification: perType
+      };
     }
+
+    // Distribute based on selected question types
+    const counts = { mcq: 0, trueFalse: 0, fillBlank: 0, identification: 0 };
+    const perType = Math.floor(total / questionTypes.length);
+    const remainder = total % questionTypes.length;
+    
+    let extraAssigned = 0;
+    questionTypes.forEach((type) => {
+      const extra = extraAssigned < remainder ? 1 : 0;
+      extraAssigned += extra;
+      
+      switch (type) {
+        case 'multiple-choice':
+          counts.mcq = perType + extra;
+          break;
+        case 'true-false':
+          counts.trueFalse = perType + extra;
+          break;
+        case 'fill-in-blank':
+          counts.fillBlank = perType + extra;
+          break;
+        case 'identification':
+          counts.identification = perType + extra;
+          break;
+      }
+    });
+
+    return counts;
   }
 
   // Fallback rule-based generation (simplified version)
-  private generateWithRules(text: string, difficulty: DifficultyLevel): QuestionSet {
+  private generateWithRules(
+    text: string, 
+    difficulty: DifficultyLevel,
+    numberOfQuestions: number,
+    questionTypes?: string[]
+  ): QuestionSet {
     const cleanText = text.replace(/\s+/g, ' ').trim();
     const sentences = cleanText.split(/[.!?]+/).filter(s => s.trim().length > 20);
     const words = cleanText.toLowerCase().match(/\b\w+\b/g) || [];
     
     // Extract key terms
     const keyTerms = this.extractKeyTerms(words);
-    const counts = this.getQuestionCounts(difficulty);
+    const counts = this.distributeQuestions(numberOfQuestions, questionTypes);
 
     return {
       multipleChoice: this.generateMCQs(sentences, keyTerms, counts.mcq),

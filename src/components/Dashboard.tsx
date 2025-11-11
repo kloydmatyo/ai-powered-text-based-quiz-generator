@@ -183,7 +183,14 @@ const Dashboard: React.FC = () => {
       setError('');
 
       try {
-        // Generate questions using AI with selected difficulty
+        console.log('📤 Sending to AI:', { 
+          textLength: text.length, 
+          difficulty,
+          numberOfQuestions,
+          questionTypes: selectedQuestionTypes 
+        });
+        
+        // Generate questions using AI with selected difficulty, number, and types
         const response = await fetch('/api/analyze-text', {
           method: 'POST',
           headers: {
@@ -191,12 +198,17 @@ const Dashboard: React.FC = () => {
           },
           body: JSON.stringify({ 
             text,
-            difficulty 
+            difficulty,
+            numberOfQuestions,
+            questionTypes: selectedQuestionTypes 
           }),
         });
 
+        console.log('📡 API Response:', response.status);
+
         if (!response.ok) {
           const errorData = await response.json();
+          console.error('❌ API Error:', errorData);
           throw new Error(errorData.error || 'Failed to generate quiz');
         }
 
