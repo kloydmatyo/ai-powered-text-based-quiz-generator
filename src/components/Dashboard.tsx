@@ -51,6 +51,7 @@ const Dashboard: React.FC = () => {
     averageScore: 0,
     engagement: 0
   });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchQuizzes();
@@ -773,34 +774,55 @@ const Dashboard: React.FC = () => {
 
   // Sidebar Navigation Component
   const Sidebar = () => {
-    const navItems = [
-      { id: 'home', icon: '🏠', label: 'Home' },
-      { id: 'quizzes', icon: '📝', label: 'My Quizzes' },
-      { id: 'create', icon: '➕', label: 'Create Quiz' },
-      { id: 'analytics', icon: '📊', label: 'Analytics' },
-      { id: 'settings', icon: '⚙️', label: 'Settings' },
-    ];
+    // Role-based navigation items
+    const navItems = user?.role === 'instructor' 
+      ? [
+          { id: 'home', icon: '🏠', label: 'Home' },
+          { id: 'quizzes', icon: '📝', label: 'My Quizzes' },
+          { id: 'create', icon: '➕', label: 'Create Quiz' },
+          { id: 'analytics', icon: '📊', label: 'Analytics' },
+          { id: 'settings', icon: '⚙️', label: 'Settings' },
+        ]
+      : [
+          { id: 'home', icon: '🏠', label: 'Home' },
+          { id: 'quizzes', icon: '📝', label: 'Available Quizzes' },
+          { id: 'settings', icon: '⚙️', label: 'Settings' },
+        ];
 
     return (
-      <aside className={`fixed left-0 top-0 h-full bg-gray-900 border-r border-gray-800 transition-all duration-300 z-40 ${
-        sidebarCollapsed ? 'w-20' : 'w-64'
-      }`}>
-        <div className="flex flex-col h-full">
-          <div className="p-6 border-b border-gray-800">
-            <div className="flex items-center justify-between">
-              {!sidebarCollapsed && (
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  QuizMate
-                </h1>
-              )}
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                {sidebarCollapsed ? '→' : '←'}
-              </button>
+      <>
+        {/* Mobile Overlay */}
+        {mobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-30 md:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
+        
+        {/* Sidebar */}
+        <aside className={`fixed left-0 top-0 h-full bg-gray-900 border-r border-gray-800 transition-all duration-300 z-40 
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
+          md:translate-x-0
+          ${sidebarCollapsed ? 'w-20' : 'w-64'}`}>
+          <div className="flex flex-col h-full">
+            <div className="p-4 md:p-6 border-b border-gray-800">
+              <div className="flex items-center justify-between">
+                {!sidebarCollapsed && (
+                  <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                    QuizMate
+                  </h1>
+                )}
+                <button
+                  onClick={() => {
+                    setSidebarCollapsed(!sidebarCollapsed);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  {sidebarCollapsed ? '→' : '←'}
+                </button>
+              </div>
             </div>
-          </div>
           <nav className="flex-1 p-4 space-y-2">
             {navItems.map((item) => (
               <button
@@ -832,23 +854,35 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </aside>
+      </>
     );
   };
 
   // Top Header Component
   const TopHeader = () => (
-    <header className="fixed top-0 right-0 left-0 h-16 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 z-30"
-      style={{ marginLeft: sidebarCollapsed ? '5rem' : '16rem' }}>
-      <div className="h-full px-6 flex items-center justify-between">
+    <header className="fixed top-0 right-0 left-0 h-16 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 z-30 md:ml-0"
+      style={{ marginLeft: window.innerWidth >= 768 ? (sidebarCollapsed ? '5rem' : '16rem') : '0' }}>
+      <div className="h-full px-4 md:px-6 flex items-center justify-between gap-2 md:gap-4">
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
+        >
+          <span className="text-2xl">☰</span>
+        </button>
+
         <div className="flex-1 max-w-xl">
-          <div className="relative">
+          <div className="relative hidden sm:block">
             <input
               type="text"
               placeholder="Search quizzes..."
-              className="w-full px-4 py-2 pl-10 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2 pl-10 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base"
             />
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
           </div>
+          <button className="sm:hidden p-2 text-gray-400 hover:text-white">
+            <span className="text-xl">🔍</span>
+          </button>
         </div>
         <div className="flex items-center gap-4">
           <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
@@ -875,18 +909,18 @@ const Dashboard: React.FC = () => {
 
   // Stats Card Component
   const StatsCard = ({ icon, label, value, trend, color }: any) => (
-    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-gray-600 transition-all hover:shadow-xl">
+    <div className="bg-gray-800 rounded-xl p-4 md:p-6 border border-gray-700 hover:border-gray-600 transition-all hover:shadow-xl">
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-gray-400 text-sm font-medium mb-1">{label}</p>
-          <h3 className="text-3xl font-bold text-white mb-2">{value}</h3>
+        <div className="flex-1 min-w-0">
+          <p className="text-gray-400 text-xs md:text-sm font-medium mb-1 truncate">{label}</p>
+          <h3 className="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2">{value}</h3>
           {trend && (
-            <p className={`text-sm ${trend > 0 ? 'text-accent' : 'text-red-400'}`}>
-              {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}% from last week
+            <p className={`text-xs md:text-sm ${trend > 0 ? 'text-accent' : 'text-red-400'}`}>
+              {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}%
             </p>
           )}
         </div>
-        <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-2xl`}>
+        <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-xl md:text-2xl flex-shrink-0 ml-2`}>
           {icon}
         </div>
       </div>
@@ -921,14 +955,17 @@ const Dashboard: React.FC = () => {
       <Sidebar />
       <TopHeader />
       
-      <main className="pt-24 pb-8 px-8 transition-all duration-300" style={{ marginLeft: sidebarCollapsed ? '5rem' : '16rem' }}>
+      <main className="pt-20 md:pt-24 pb-8 px-4 sm:px-6 md:px-8 transition-all duration-300 md:ml-0" 
+        style={{ marginLeft: window.innerWidth >= 768 ? (sidebarCollapsed ? '5rem' : '16rem') : '0' }}>
         {activeView === 'home' && (
           <div className="space-y-6">
-            <div className="bg-gradient-to-r from-primary to-secondary rounded-xl p-8 text-white">
-              <h2 className="text-3xl font-bold mb-2">Welcome back, {user?.username}! 👋</h2>
-              <p className="text-blue-100">Ready to create amazing quizzes today?</p>
+            <div className="bg-gradient-to-r from-primary to-secondary rounded-xl p-6 md:p-8 text-white">
+              <h2 className="text-2xl md:text-3xl font-bold mb-2">Welcome back, {user?.username}! 👋</h2>
+              <p className="text-sm md:text-base text-blue-100">
+                {user?.role === 'instructor' ? 'Ready to create amazing quizzes today?' : 'Ready to take some quizzes today?'}
+              </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               <StatsCard icon="📝" label="Total Quizzes" value={stats.totalQuizzes} trend={12} color="from-primary to-blue-600" />
               <StatsCard icon="🎯" label="Total Plays" value={stats.totalPlays} trend={8} color="from-secondary to-purple-600" />
               <StatsCard icon="⭐" label="Average Score" value={`${stats.averageScore}%`} trend={5} color="from-accent to-green-600" />
@@ -941,7 +978,7 @@ const Dashboard: React.FC = () => {
                   View All →
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {quizzes.slice(0, 6).map((quiz) => (
                   <div key={quiz._id} className="bg-gray-900 rounded-lg p-4 border border-gray-700 hover:border-primary transition-all cursor-pointer group"
                     onClick={() => setSelectedQuiz(quiz)}>
@@ -964,21 +1001,21 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             {user?.role === 'instructor' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <button onClick={() => setShowAICreateModal(true)} className="bg-gradient-to-br from-accent to-green-600 rounded-xl p-6 text-white hover:shadow-2xl transition-all group">
-                  <div className="text-4xl mb-3">🤖</div>
-                  <h4 className="text-lg font-bold mb-1">AI Quiz Generator</h4>
-                  <p className="text-sm text-green-100">Create quizzes from documents</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                <button onClick={() => setShowAICreateModal(true)} className="bg-gradient-to-br from-accent to-green-600 rounded-xl p-4 md:p-6 text-white hover:shadow-2xl transition-all group">
+                  <div className="text-3xl md:text-4xl mb-2 md:mb-3">🤖</div>
+                  <h4 className="text-base md:text-lg font-bold mb-1">AI Quiz Generator</h4>
+                  <p className="text-xs md:text-sm text-green-100">Create quizzes from documents</p>
                 </button>
-                <button onClick={() => setActiveView('analytics')} className="bg-gradient-to-br from-secondary to-purple-600 rounded-xl p-6 text-white hover:shadow-2xl transition-all">
-                  <div className="text-4xl mb-3">📊</div>
-                  <h4 className="text-lg font-bold mb-1">View Analytics</h4>
-                  <p className="text-sm text-purple-100">Track quiz performance</p>
+                <button onClick={() => setActiveView('analytics')} className="bg-gradient-to-br from-secondary to-purple-600 rounded-xl p-4 md:p-6 text-white hover:shadow-2xl transition-all">
+                  <div className="text-3xl md:text-4xl mb-2 md:mb-3">📊</div>
+                  <h4 className="text-base md:text-lg font-bold mb-1">View Analytics</h4>
+                  <p className="text-xs md:text-sm text-purple-100">Track quiz performance</p>
                 </button>
-                <button onClick={() => setActiveView('settings')} className="bg-gradient-to-br from-primary to-blue-600 rounded-xl p-6 text-white hover:shadow-2xl transition-all">
-                  <div className="text-4xl mb-3">⚙️</div>
-                  <h4 className="text-lg font-bold mb-1">Settings</h4>
-                  <p className="text-sm text-blue-100">Customize your experience</p>
+                <button onClick={() => setActiveView('settings')} className="bg-gradient-to-br from-primary to-blue-600 rounded-xl p-4 md:p-6 text-white hover:shadow-2xl transition-all">
+                  <div className="text-3xl md:text-4xl mb-2 md:mb-3">⚙️</div>
+                  <h4 className="text-base md:text-lg font-bold mb-1">Settings</h4>
+                  <p className="text-xs md:text-sm text-blue-100">Customize your experience</p>
                 </button>
               </div>
             )}
@@ -995,24 +1032,24 @@ const Dashboard: React.FC = () => {
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {quizzes.map((quiz) => (
-                <div key={quiz._id} className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-primary transition-all hover:shadow-xl">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-3xl">📋</div>
+                <div key={quiz._id} className="bg-gray-800 rounded-xl p-4 md:p-6 border border-gray-700 hover:border-primary transition-all hover:shadow-xl">
+                  <div className="flex items-start justify-between mb-3 md:mb-4">
+                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-2xl md:text-3xl">📋</div>
                     <span className="text-xs text-gray-400 bg-gray-900 px-2 py-1 rounded">{new Date(quiz.createdAt).toLocaleDateString()}</span>
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">{quiz.title}</h3>
-                  <p className="text-gray-400 text-sm mb-4 line-clamp-2">{quiz.description || 'No description available'}</p>
-                  <div className="flex gap-2">
-                    <button onClick={() => setSelectedQuiz(quiz)} className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-colors">
+                  <h3 className="text-lg md:text-xl font-bold text-white mb-2">{quiz.title}</h3>
+                  <p className="text-gray-400 text-xs md:text-sm mb-3 md:mb-4 line-clamp-2">{quiz.description || 'No description available'}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => setSelectedQuiz(quiz)} className="flex-1 px-3 md:px-4 py-2 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-colors text-sm md:text-base">
                       {user?.role === 'instructor' ? 'Manage' : 'Take Quiz'}
                     </button>
                     {user?.role === 'instructor' && (
                       <>
-                        <button onClick={() => setEditingQuiz(quiz)} className="px-4 py-2 bg-secondary hover:bg-secondary/90 text-white rounded-lg transition-colors">✏️</button>
-                        <button onClick={() => setViewingSubmissions(quiz)} className="px-4 py-2 bg-accent hover:bg-accent/90 text-white rounded-lg transition-colors">📊</button>
-                        <button onClick={() => deleteQuiz(quiz._id)} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">🗑️</button>
+                        <button onClick={() => setEditingQuiz(quiz)} className="px-3 md:px-4 py-2 bg-secondary hover:bg-secondary/90 text-white rounded-lg transition-colors text-sm md:text-base">✏️</button>
+                        <button onClick={() => setViewingSubmissions(quiz)} className="px-3 md:px-4 py-2 bg-accent hover:bg-accent/90 text-white rounded-lg transition-colors text-sm md:text-base">📊</button>
+                        <button onClick={() => deleteQuiz(quiz._id)} className="px-3 md:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm md:text-base">🗑️</button>
                       </>
                     )}
                   </div>
@@ -1038,7 +1075,7 @@ const Dashboard: React.FC = () => {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
                 <h3 className="text-lg font-bold text-white mb-4">Top Performing Quizzes</h3>
                 <div className="space-y-3">
@@ -1159,7 +1196,7 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="flex gap-3">
                 <button type="submit" className="flex-1 px-6 py-3 bg-accent hover:bg-accent/90 text-white font-semibold rounded-lg">
-                  Update Quiz
+                  Save Quiz
                 </button>
                 <button type="button" onClick={() => setEditingQuiz(null)} className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg">
                   Cancel
