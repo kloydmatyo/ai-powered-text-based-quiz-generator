@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (text.length > 15000) {
+    if (text.length > 1000000) {
       return NextResponse.json(
-        { error: 'Text is too long. Please limit to 15,000 characters.' },
+        { error: 'Text is too long. Please limit to 1,000,000 characters.' },
         { status: 400 }
       );
     }
