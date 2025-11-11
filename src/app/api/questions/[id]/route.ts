@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Question from '@/models/Question';
 import Quiz from '@/models/Quiz';
+import { authenticateRequest } from '@/lib/auth-middleware';
 
 export async function PUT(
   request: NextRequest,
@@ -10,7 +11,15 @@ export async function PUT(
   try {
     await connectDB();
     
-    const userId = request.headers.get('userId');
+    // Authenticate the request
+    const auth = await authenticateRequest(request);
+    if (!auth) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
     const { id } = await params;
     const { questionText, answerChoices, correctAnswer } = await request.json();
 
@@ -46,7 +55,7 @@ export async function PUT(
     }
 
     // Verify quiz belongs to user
-    const quiz = await Quiz.findOne({ _id: question.quizId, userId });
+    const quiz = await Quiz.findOne({ _id: question.quizId, userId: auth.userId });
     if (!quiz) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -85,7 +94,15 @@ export async function DELETE(
   try {
     await connectDB();
     
-    const userId = request.headers.get('userId');
+    // Authenticate the request
+    const auth = await authenticateRequest(request);
+    if (!auth) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
     const { id } = await params;
 
     // Find the question and verify ownership through quiz
@@ -98,7 +115,7 @@ export async function DELETE(
     }
 
     // Verify quiz belongs to user
-    const quiz = await Quiz.findOne({ _id: question.quizId, userId });
+    const quiz = await Quiz.findOne({ _id: question.quizId, userId: auth.userId });
     if (!quiz) {
       return NextResponse.json(
         { error: 'Unauthorized' },
