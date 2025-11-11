@@ -26,6 +26,8 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [editingQuiz, setEditingQuiz] = useState(false);
+  const [quizData, setQuizData] = useState({ title: quiz.title, description: quiz.description });
   const [newQuestion, setNewQuestion] = useState({
     questionText: '',
     answerChoices: ['', ''],
@@ -92,6 +94,34 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
       }
     } catch (error) {
       console.error('Error creating question:', error);
+    }
+  };
+
+  const updateQuiz = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/quizzes/${quiz._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(quizData),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        quiz.title = data.quiz.title;
+        quiz.description = data.quiz.description;
+        setEditingQuiz(false);
+        alert('Quiz updated successfully!');
+      } else {
+        alert('Failed to update quiz');
+      }
+    } catch (error) {
+      console.error('Error updating quiz:', error);
+      alert('Error updating quiz');
     }
   };
 
@@ -276,20 +306,26 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
             </div>
             <div className="flex items-center space-x-4">
               <button
+                onClick={() => setEditingQuiz(true)}
+                className="bg-secondary hover:bg-secondary/90 text-white px-4 py-2 rounded-md text-sm font-medium"
+              >
+                ✏️ Edit Quiz
+              </button>
+              <button
                 onClick={exportToCSV}
-                className="bg-accent hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium"
+                className="bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-md text-sm font-medium"
               >
                 Export CSV
               </button>
               <button
                 onClick={exportToPDF}
-                className="bg-secondary hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                className="bg-secondary hover:bg-secondary/90 text-white px-4 py-2 rounded-md text-sm font-medium"
               >
                 Export PDF
               </button>
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="bg-primary hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md text-sm font-medium"
               >
                 Add Question
               </button>
@@ -301,6 +337,60 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
+          {/* Edit Quiz Form */}
+          {editingQuiz && (
+            <div className="bg-gray-800 rounded-lg p-6 mb-6 border-2 border-secondary">
+              <h3 className="text-lg font-medium text-white mb-4">
+                ✏️ Edit Quiz Details
+              </h3>
+              <form onSubmit={updateQuiz} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Quiz Title
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={quizData.title}
+                    onChange={(e) => setQuizData({ ...quizData, title: e.target.value })}
+                    className="block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-secondary focus:border-secondary"
+                    placeholder="Enter quiz title"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    value={quizData.description}
+                    onChange={(e) => setQuizData({ ...quizData, description: e.target.value })}
+                    className="block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-secondary focus:border-secondary"
+                    rows={3}
+                    placeholder="Enter quiz description"
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    type="submit"
+                    className="bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    💾 Save Changes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingQuiz(false);
+                      setQuizData({ title: quiz.title, description: quiz.description });
+                    }}
+                    className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
           {/* Create/Edit Question Form */}
           {(showCreateForm || editingQuestion) && (
             <div className="bg-gray-800 rounded-lg p-6 mb-6">
