@@ -18,6 +18,13 @@ interface Quiz {
   };
 }
 
+interface DashboardStats {
+  totalQuizzes: number;
+  totalPlays: number;
+  averageScore: number;
+  engagement: number;
+}
+
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -36,9 +43,18 @@ const Dashboard: React.FC = () => {
     sourceText: string;
   } | null>(null);
   const [showAIPreview, setShowAIPreview] = useState(false);
+  const [activeView, setActiveView] = useState<'home' | 'quizzes' | 'create' | 'analytics' | 'settings'>('home');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalQuizzes: 0,
+    totalPlays: 0,
+    averageScore: 0,
+    engagement: 0
+  });
 
   useEffect(() => {
     fetchQuizzes();
+    fetchStats();
   }, []);
 
   const fetchQuizzes = async () => {
@@ -53,11 +69,36 @@ const Dashboard: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setQuizzes(data.quizzes);
+        setStats(prev => ({ ...prev, totalQuizzes: data.quizzes.length }));
       }
     } catch (error) {
       console.error('Error fetching quizzes:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/quiz-submissions', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const submissions = data.submissions || [];
+        const avgScore = submissions.length > 0 
+          ? submissions.reduce((acc: number, sub: any) => acc + sub.score, 0) / submissions.length 
+          : 0;
+        setStats(prev => ({
+          ...prev,
+          totalPlays: submissions.length,
+          averageScore: Math.round(avgScore),
+          engagement: submissions.length > 0 && quizzes.length > 0 ? Math.min(100, (submissions.length / quizzes.length) * 20) : 0
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
     }
   };
 
@@ -730,10 +771,135 @@ const Dashboard: React.FC = () => {
     );
   };
 
+  // Sidebar Navigation Component
+  const Sidebar = () => {
+    const navItems = [
+      { id: 'home', icon: '🏠', label: 'Home' },
+      { id: 'quizzes', icon: '📝', label: 'My Quizzes' },
+      { id: 'create', icon: '➕', label: 'Create Quiz' },
+      { id: 'analytics', icon: '📊', label: 'Analytics' },
+      { id: 'settings', icon: '⚙️', label: 'Settings' },
+    ];
+
+    return (
+      <aside className={`fixed left-0 top-0 h-full bg-gray-900 border-r border-gray-800 transition-all duration-300 z-40 ${
+        sidebarCollapsed ? 'w-20' : 'w-64'
+      }`}>
+        <div className="flex flex-col h-full">
+          <div className="p-6 border-b border-gray-800">
+            <div className="flex items-center justify-between">
+              {!sidebarCollapsed && (
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  QuizMate
+                </h1>
+              )}
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                {sidebarCollapsed ? '→' : '←'}
+              </button>
+            </div>
+          </div>
+          <nav className="flex-1 p-4 space-y-2">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveView(item.id as any)}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-all ${
+                  activeView === item.id
+                    ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                }`}
+              >
+                <span className="text-2xl">{item.icon}</span>
+                {!sidebarCollapsed && <span className="font-medium">{item.label}</span>}
+              </button>
+            ))}
+          </nav>
+          <div className="p-4 border-t border-gray-800">
+            <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold">
+                {user?.username?.charAt(0).toUpperCase()}
+              </div>
+              {!sidebarCollapsed && (
+                <div className="flex-1">
+                  <p className="text-white font-medium text-sm">{user?.username}</p>
+                  <p className="text-gray-400 text-xs">{user?.role}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </aside>
+    );
+  };
+
+  // Top Header Component
+  const TopHeader = () => (
+    <header className="fixed top-0 right-0 left-0 h-16 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 z-30"
+      style={{ marginLeft: sidebarCollapsed ? '5rem' : '16rem' }}>
+      <div className="h-full px-6 flex items-center justify-between">
+        <div className="flex-1 max-w-xl">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search quizzes..."
+              className="w-full px-4 py-2 pl-10 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
+            <span className="text-2xl">🔔</span>
+            <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full"></span>
+          </button>
+          <div className="relative group">
+            <button className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold hover:shadow-lg transition-shadow">
+              {user?.username?.charAt(0).toUpperCase()}
+            </button>
+            <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-xl border border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+              <button
+                onClick={logout}
+                className="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+
+  // Stats Card Component
+  const StatsCard = ({ icon, label, value, trend, color }: any) => (
+    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-gray-600 transition-all hover:shadow-xl">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-gray-400 text-sm font-medium mb-1">{label}</p>
+          <h3 className="text-3xl font-bold text-white mb-2">{value}</h3>
+          {trend && (
+            <p className={`text-sm ${trend > 0 ? 'text-accent' : 'text-red-400'}`}>
+              {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}% from last week
+            </p>
+          )}
+        </div>
+        <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-2xl`}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary mx-auto mb-4"></div>
+          <p className="text-white text-xl">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -743,196 +909,266 @@ const Dashboard: React.FC = () => {
   }
 
   if (selectedQuiz) {
-    // Show QuestionManager for instructors, QuizTaker for learners
     if (user?.role === 'instructor') {
-      return (
-        <QuestionManager 
-          quiz={selectedQuiz} 
-          onBack={() => setSelectedQuiz(null)} 
-        />
-      );
+      return <QuestionManager quiz={selectedQuiz} onBack={() => setSelectedQuiz(null)} />;
     } else {
-      return (
-        <QuizTaker 
-          quiz={selectedQuiz} 
-          onBack={() => setSelectedQuiz(null)} 
-        />
-      );
+      return <QuizTaker quiz={selectedQuiz} onBack={() => setSelectedQuiz(null)} />;
     }
   }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-gray-800 shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-3xl font-bold text-white">QuizMate</h1>
+      <Sidebar />
+      <TopHeader />
+      
+      <main className="pt-24 pb-8 px-8 transition-all duration-300" style={{ marginLeft: sidebarCollapsed ? '5rem' : '16rem' }}>
+        {activeView === 'home' && (
+          <div className="space-y-6">
+            <div className="bg-gradient-to-r from-primary to-secondary rounded-xl p-8 text-white">
+              <h2 className="text-3xl font-bold mb-2">Welcome back, {user?.username}! 👋</h2>
+              <p className="text-blue-100">Ready to create amazing quizzes today?</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-300">Welcome, {user?.username}</span>
-              <button
-                onClick={logout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                Logout
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatsCard icon="📝" label="Total Quizzes" value={stats.totalQuizzes} trend={12} color="from-primary to-blue-600" />
+              <StatsCard icon="🎯" label="Total Plays" value={stats.totalPlays} trend={8} color="from-secondary to-purple-600" />
+              <StatsCard icon="⭐" label="Average Score" value={`${stats.averageScore}%`} trend={5} color="from-accent to-green-600" />
+              <StatsCard icon="📈" label="Engagement" value={`${stats.engagement}%`} trend={-3} color="from-orange-500 to-red-500" />
             </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">My Quizzes</h2>
-            <div className="flex space-x-3">
-              {user?.role === 'instructor' && (
-                <>
-                  <a
-                    href="/text-analyzer"
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    AI Text Analyzer
-                  </a>
-                  <button
-                    onClick={() => setShowAICreateModal(true)}
-                    className="bg-primary hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    Create New Quiz
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* AI Quiz Creation Modal */}
-          {showAICreateModal && <AIQuizCreationModal />}
-
-          {/* AI Quiz Preview */}
-          {showAIPreview && aiQuizData && <AIQuizPreview />}
-
-          {/* Edit Quiz Form */}
-          {editingQuiz && (
-            <div className="bg-gray-800 rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-medium text-white mb-4">
-                Edit Quiz
-              </h3>
-              <form onSubmit={updateQuiz} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">
-                    Quiz Title
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingQuiz.title}
-                    onChange={(e) => {
-                      setEditingQuiz({ ...editingQuiz, title: e.target.value });
-                    }}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-primary focus:border-primary"
-                    placeholder="Enter quiz title"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">
-                    Description (Optional)
-                  </label>
-                  <textarea
-                    value={editingQuiz.description}
-                    onChange={(e) => {
-                      setEditingQuiz({ ...editingQuiz, description: e.target.value });
-                    }}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-primary focus:border-primary"
-                    rows={3}
-                    placeholder="Enter quiz description"
-                  />
-                </div>
-                <div className="flex space-x-3">
-                  <button
-                    type="submit"
-                    className="bg-accent hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    Update Quiz
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingQuiz(null);
-                    }}
-                    className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Quiz List */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {quizzes.length === 0 ? (
-              <div className="col-span-full text-center py-12">
-                <p className="text-gray-400 text-lg">
-                  {user?.role === 'instructor' ? 'No quizzes created yet.' : 'No quizzes available.'}
-                </p>
-                {user?.role === 'instructor' && (
-                  <p className="text-gray-500 text-sm mt-2">Click "Create New Quiz" to get started!</p>
-                )}
+            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-white">Recent Quizzes</h3>
+                <button onClick={() => setActiveView('quizzes')} className="text-primary hover:text-primary/80 text-sm font-medium">
+                  View All →
+                </button>
               </div>
-            ) : (
-              quizzes.map((quiz) => (
-                <div key={quiz._id} className="bg-gray-800 rounded-lg p-6 shadow-lg">
-                  <h3 className="text-xl font-semibold text-white mb-2">{quiz.title}</h3>
-                  {quiz.description && (
-                    <p className="text-gray-300 mb-4">{quiz.description}</p>
-                  )}
-                  <div className="text-gray-400 text-sm mb-4">
-                    <p>Created: {new Date(quiz.createdAt).toLocaleDateString()}</p>
-                    {user?.role === 'learner' && quiz.userId && (
-                      <p>By: {quiz.userId.username || 'Unknown'}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {user?.role === 'instructor' && (
-                      <>
-                        <button 
-                          onClick={() => setEditingQuiz(quiz)}
-                          className="bg-secondary hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
-                        >
-                          Edit
-                        </button>
-                        <button 
-                          onClick={() => setViewingSubmissions(quiz)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
-                        >
-                          Submissions
-                        </button>
-                      </>
-                    )}
-                    <button 
-                      onClick={() => setSelectedQuiz(quiz)}
-                      className="bg-primary hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm"
-                    >
-                      {user?.role === 'instructor' ? 'Questions' : 'Take Quiz'}
-                    </button>
-                    {user?.role === 'instructor' && (
-                      <button
-                        onClick={() => deleteQuiz(quiz._id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
-                      >
-                        Delete
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {quizzes.slice(0, 6).map((quiz) => (
+                  <div key={quiz._id} className="bg-gray-900 rounded-lg p-4 border border-gray-700 hover:border-primary transition-all cursor-pointer group"
+                    onClick={() => setSelectedQuiz(quiz)}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-2xl">📋</div>
+                      <span className="text-xs text-gray-400">{new Date(quiz.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <h4 className="text-white font-semibold mb-1 group-hover:text-primary transition-colors">{quiz.title}</h4>
+                    <p className="text-gray-400 text-sm line-clamp-2 mb-3">{quiz.description || 'No description'}</p>
+                    <div className="flex gap-2">
+                      <button className="flex-1 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs rounded-lg transition-colors">
+                        {user?.role === 'instructor' ? 'Edit' : 'Take'}
                       </button>
-                    )}
+                      {user?.role === 'instructor' && (
+                        <button className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition-colors">📊</button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
+            </div>
+            {user?.role === 'instructor' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <button onClick={() => setShowAICreateModal(true)} className="bg-gradient-to-br from-accent to-green-600 rounded-xl p-6 text-white hover:shadow-2xl transition-all group">
+                  <div className="text-4xl mb-3">🤖</div>
+                  <h4 className="text-lg font-bold mb-1">AI Quiz Generator</h4>
+                  <p className="text-sm text-green-100">Create quizzes from documents</p>
+                </button>
+                <button onClick={() => setActiveView('analytics')} className="bg-gradient-to-br from-secondary to-purple-600 rounded-xl p-6 text-white hover:shadow-2xl transition-all">
+                  <div className="text-4xl mb-3">📊</div>
+                  <h4 className="text-lg font-bold mb-1">View Analytics</h4>
+                  <p className="text-sm text-purple-100">Track quiz performance</p>
+                </button>
+                <button onClick={() => setActiveView('settings')} className="bg-gradient-to-br from-primary to-blue-600 rounded-xl p-6 text-white hover:shadow-2xl transition-all">
+                  <div className="text-4xl mb-3">⚙️</div>
+                  <h4 className="text-lg font-bold mb-1">Settings</h4>
+                  <p className="text-sm text-blue-100">Customize your experience</p>
+                </button>
+              </div>
             )}
           </div>
-        </div>
+        )}
+
+        {activeView === 'quizzes' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white">My Quizzes</h2>
+              {user?.role === 'instructor' && (
+                <button onClick={() => setShowAICreateModal(true)} className="px-6 py-3 bg-accent hover:bg-accent/90 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all">
+                  ➕ Create New Quiz
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {quizzes.map((quiz) => (
+                <div key={quiz._id} className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-primary transition-all hover:shadow-xl">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-3xl">📋</div>
+                    <span className="text-xs text-gray-400 bg-gray-900 px-2 py-1 rounded">{new Date(quiz.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">{quiz.title}</h3>
+                  <p className="text-gray-400 text-sm mb-4 line-clamp-2">{quiz.description || 'No description available'}</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setSelectedQuiz(quiz)} className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-colors">
+                      {user?.role === 'instructor' ? 'Manage' : 'Take Quiz'}
+                    </button>
+                    {user?.role === 'instructor' && (
+                      <>
+                        <button onClick={() => setEditingQuiz(quiz)} className="px-4 py-2 bg-secondary hover:bg-secondary/90 text-white rounded-lg transition-colors">✏️</button>
+                        <button onClick={() => setViewingSubmissions(quiz)} className="px-4 py-2 bg-accent hover:bg-accent/90 text-white rounded-lg transition-colors">📊</button>
+                        <button onClick={() => deleteQuiz(quiz._id)} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">🗑️</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeView === 'analytics' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white">Analytics Dashboard</h2>
+            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-lg font-bold text-white mb-4">Quiz Performance</h3>
+              <div className="h-64 flex items-end justify-around gap-2">
+                {[65, 78, 82, 71, 88, 75, 92].map((value, index) => (
+                  <div key={index} className="flex-1 flex flex-col items-center gap-2">
+                    <div className="w-full bg-gray-700 rounded-t-lg overflow-hidden" style={{ height: '200px' }}>
+                      <div className="w-full bg-gradient-to-t from-primary to-secondary rounded-t-lg transition-all" style={{ height: `${value}%` }}></div>
+                    </div>
+                    <span className="text-xs text-gray-400">Day {index + 1}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h3 className="text-lg font-bold text-white mb-4">Top Performing Quizzes</h3>
+                <div className="space-y-3">
+                  {quizzes.slice(0, 5).map((quiz, index) => (
+                    <div key={quiz._id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '📝'}</span>
+                        <span className="text-white">{quiz.title}</span>
+                      </div>
+                      <span className="text-accent font-semibold">{Math.floor(Math.random() * 100)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h3 className="text-lg font-bold text-white mb-4">Participation Trends</h3>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-400">This Week</span>
+                      <span className="text-white font-semibold">87%</span>
+                    </div>
+                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-accent to-green-600 rounded-full" style={{ width: '87%' }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-400">Last Week</span>
+                      <span className="text-white font-semibold">72%</span>
+                    </div>
+                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-secondary to-purple-600 rounded-full" style={{ width: '72%' }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-400">Last Month</span>
+                      <span className="text-white font-semibold">65%</span>
+                    </div>
+                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-primary to-blue-600 rounded-full" style={{ width: '65%' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeView === 'settings' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white">Settings</h2>
+            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-lg font-bold text-white mb-4">Profile Settings</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Username</label>
+                  <input type="text" value={user?.username} disabled className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Email</label>
+                  <input type="email" value={user?.email} disabled className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Role</label>
+                  <input type="text" value={user?.role} disabled className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white capitalize" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeView === 'create' && (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">🚀</div>
+            <h2 className="text-2xl font-bold text-white mb-4">Create New Quiz</h2>
+            <button onClick={() => setShowAICreateModal(true)} className="px-8 py-4 bg-accent hover:bg-accent/90 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transition-all">
+              Start with AI Generator
+            </button>
+          </div>
+        )}
       </main>
+
+      {/* AI Quiz Creation Modal */}
+      {showAICreateModal && <AIQuizCreationModal />}
+
+      {/* AI Quiz Preview */}
+      {showAIPreview && aiQuizData && <AIQuizPreview />}
+
+      {/* Edit Quiz Modal */}
+      {editingQuiz && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-2xl p-8 max-w-2xl w-full mx-4 border border-gray-700">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-white">Edit Quiz</h3>
+              <button onClick={() => setEditingQuiz(null)} className="text-gray-400 hover:text-white text-2xl">✕</button>
+            </div>
+            <form onSubmit={updateQuiz} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Quiz Title</label>
+                <input
+                  type="text"
+                  required
+                  value={editingQuiz.title}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, title: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                <textarea
+                  value={editingQuiz.description}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, description: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-3">
+                <button type="submit" className="flex-1 px-6 py-3 bg-accent hover:bg-accent/90 text-white font-semibold rounded-lg">
+                  Update Quiz
+                </button>
+                <button type="button" onClick={() => setEditingQuiz(null)} className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
