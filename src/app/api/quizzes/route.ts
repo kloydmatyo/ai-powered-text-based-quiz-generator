@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { title, description, difficulty, questionTypes } = await request.json();
+    const { title, description, difficulty, questionTypes, numberOfQuestions } = await request.json();
 
     // Check if user is an instructor
     if (auth.user.role !== 'instructor') {
@@ -59,11 +59,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate number of questions
+    if (numberOfQuestions && (numberOfQuestions < 1 || numberOfQuestions > 100)) {
+      return NextResponse.json(
+        { error: 'Number of questions must be between 1 and 100' },
+        { status: 400 }
+      );
+    }
+
     const quiz = new Quiz({
       title,
       description,
       difficulty: difficulty || 'moderate',
       questionTypes: questionTypes && questionTypes.length > 0 ? questionTypes : ['multiple-choice'],
+      numberOfQuestions: numberOfQuestions || 10,
       userId: auth.userId
     });
 

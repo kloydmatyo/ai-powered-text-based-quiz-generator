@@ -25,11 +25,13 @@ const Dashboard: React.FC = () => {
   const [showAICreateModal, setShowAICreateModal] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
+  const [viewingSubmissions, setViewingSubmissions] = useState<Quiz | null>(null);
   const [aiQuizData, setAiQuizData] = useState<{
     title: string;
     description: string;
     difficulty: 'easy' | 'moderate' | 'challenging';
     questionTypes: string[];
+    numberOfQuestions: number;
     questions: any[];
     sourceText: string;
   } | null>(null);
@@ -125,6 +127,7 @@ const Dashboard: React.FC = () => {
     const [step, setStep] = useState<'upload' | 'processing' | 'preview'>('upload');
     const [difficulty, setDifficulty] = useState<'easy' | 'moderate' | 'challenging'>('moderate');
     const [selectedQuestionTypes, setSelectedQuestionTypes] = useState<string[]>(['multiple-choice']);
+    const [numberOfQuestions, setNumberOfQuestions] = useState<number>(10);
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
       const uploadedFile = event.target.files?.[0];
@@ -232,12 +235,16 @@ const Dashboard: React.FC = () => {
           })));
         }
 
+        // Limit questions to the selected number
+        const limitedQuestions = questions.slice(0, numberOfQuestions);
+
         setAiQuizData({
           title: file?.name.replace(/\.[^/.]+$/, '') || 'AI Generated Quiz',
           description: `Quiz automatically generated from ${file?.name || 'uploaded content'}`,
           difficulty,
           questionTypes: selectedQuestionTypes,
-          questions,
+          numberOfQuestions,
+          questions: limitedQuestions,
           sourceText: text
         });
 
@@ -361,6 +368,37 @@ const Dashboard: React.FC = () => {
                       </p>
                     )}
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Number of Questions
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="number"
+                        min="1"
+                        max="50"
+                        value={numberOfQuestions}
+                        onChange={(e) => setNumberOfQuestions(Math.max(1, Math.min(50, parseInt(e.target.value) || 10)))}
+                        className="w-24 px-3 py-2 border border-gray-300 rounded text-sm focus:ring-purple-500 focus:border-purple-500"
+                      />
+                      <div className="flex gap-2">
+                        {[5, 10, 20].map((num) => (
+                          <button
+                            key={num}
+                            type="button"
+                            onClick={() => setNumberOfQuestions(num)}
+                            className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-100"
+                          >
+                            {num}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      AI will generate this many questions from your document
+                    </p>
+                  </div>
                 </>
               )}
 
@@ -422,7 +460,8 @@ const Dashboard: React.FC = () => {
             title: editableQuiz.title,
             description: editableQuiz.description,
             difficulty: editableQuiz.difficulty,
-            questionTypes: editableQuiz.questionTypes
+            questionTypes: editableQuiz.questionTypes,
+            numberOfQuestions: editableQuiz.numberOfQuestions
           }),
         });
 
@@ -566,12 +605,129 @@ const Dashboard: React.FC = () => {
     );
   };
 
+  const SubmissionsViewer = ({ quiz }: { quiz: Quiz }) => {
+    const [submissions, setSubmissions] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      fetchSubmissions();
+    }, [quiz._id]);
+
+    const fetchSubmissions = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/quiz-submissions?quizId=${quiz._id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setSubmissions(data.submissions);
+        }
+      } catch (error) {
+        console.error('Error fetching submissions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-6xl mx-auto py-8 px-4">
+          <button
+            onClick={() => setViewingSubmissions(null)}
+            className="mb-6 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md"
+          >
+            ← Back to Quizzes
+          </button>
+
+          <div className="bg-gray-800 rounded-lg p-6 mb-6">
+            <h1 className="text-3xl font-bold text-white mb-2">{quiz.title}</h1>
+            <p className="text-gray-300">Quiz Submissions</p>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="text-white text-xl">Loading submissions...</div>
+            </div>
+          ) : submissions.length === 0 ? (
+            <div className="bg-gray-800 rounded-lg p-8 text-center">
+              <p className="text-gray-300 text-lg">No submissions yet</p>
+              <p className="text-gray-400 text-sm mt-2">Learners haven't taken this quiz yet</p>
+            </div>
+          ) : (
+            <div className="bg-gray-800 rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Learner
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Score
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Submitted
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {submissions.map((submission) => (
+                    <tr key={submission._id} className="hover:bg-gray-750">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                        {submission.userId?.username || 'Unknown'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        {submission.userId?.email || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`font-semibold ${
+                          submission.score >= 80 ? 'text-green-400' :
+                          submission.score >= 60 ? 'text-yellow-400' :
+                          'text-red-400'
+                        }`}>
+                          {submission.score}%
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        {new Date(submission.submittedAt).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          submission.score >= 60 ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'
+                        }`}>
+                          {submission.score >= 60 ? 'Passed' : 'Failed'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
       </div>
     );
+  }
+
+  if (viewingSubmissions) {
+    return <SubmissionsViewer quiz={viewingSubmissions} />;
   }
 
   if (selectedQuiz) {
@@ -727,14 +883,22 @@ const Dashboard: React.FC = () => {
                       <p>By: {quiz.userId.username || 'Unknown'}</p>
                     )}
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2">
                     {user?.role === 'instructor' && (
-                      <button 
-                        onClick={() => setEditingQuiz(quiz)}
-                        className="bg-secondary hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
-                      >
-                        Edit
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => setEditingQuiz(quiz)}
+                          className="bg-secondary hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => setViewingSubmissions(quiz)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Submissions
+                        </button>
+                      </>
                     )}
                     <button 
                       onClick={() => setSelectedQuiz(quiz)}
