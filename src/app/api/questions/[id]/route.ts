@@ -21,28 +21,54 @@ export async function PUT(
     }
     
     const { id } = await params;
-    const { questionText, answerChoices, correctAnswer } = await request.json();
+    const { questionText, questionType, answerChoices, correctAnswer } = await request.json();
 
     // Validation
-    if (!questionText || !answerChoices || correctAnswer === undefined) {
+    if (!questionText || correctAnswer === undefined) {
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { error: 'Question text and correct answer are required' },
         { status: 400 }
       );
     }
 
-    if (answerChoices.length < 2 || answerChoices.length > 6) {
-      return NextResponse.json(
-        { error: 'Must have between 2 and 6 answer choices' },
-        { status: 400 }
-      );
-    }
+    // Validate based on question type
+    if (questionType === 'fill-in-blank') {
+      // Fill-in-blank: correctAnswer should be a string
+      if (typeof correctAnswer !== 'string' || correctAnswer.trim() === '') {
+        return NextResponse.json(
+          { error: 'Fill-in-blank questions require a text answer' },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Multiple choice or true/false: need answer choices
+      if (!answerChoices || answerChoices.length < 2) {
+        return NextResponse.json(
+          { error: 'Must have at least 2 answer choices' },
+          { status: 400 }
+        );
+      }
 
-    if (correctAnswer < 0 || correctAnswer >= answerChoices.length) {
-      return NextResponse.json(
-        { error: 'Invalid correct answer index' },
-        { status: 400 }
-      );
+      if (questionType === 'true-false' && answerChoices.length !== 2) {
+        return NextResponse.json(
+          { error: 'True/False questions must have exactly 2 choices' },
+          { status: 400 }
+        );
+      }
+
+      if (questionType === 'multiple-choice' && answerChoices.length > 6) {
+        return NextResponse.json(
+          { error: 'Multiple choice questions cannot have more than 6 choices' },
+          { status: 400 }
+        );
+      }
+
+      if (typeof correctAnswer !== 'number' || correctAnswer < 0 || correctAnswer >= answerChoices.length) {
+        return NextResponse.json(
+          { error: 'Invalid correct answer index' },
+          { status: 400 }
+        );
+      }
     }
 
     // Find the question and verify ownership through quiz
@@ -65,7 +91,10 @@ export async function PUT(
 
     // Update question
     question.questionText = questionText;
-    question.answerChoices = answerChoices;
+    if (questionType) {
+      question.questionType = questionType;
+    }
+    question.answerChoices = answerChoices || [];
     question.correctAnswer = correctAnswer;
     
     await question.save();
