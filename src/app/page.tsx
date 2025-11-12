@@ -2,13 +2,14 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import LandingPage from '@/components/LandingPage';
 import LoginForm from '@/components/LoginForm';
 import RegisterForm from '@/components/RegisterForm';
 import Dashboard from '@/components/Dashboard';
 
 export default function Home() {
   const { user, loading } = useAuth();
-  const [showLogin, setShowLogin] = useState(true);
+  const [view, setView] = useState<'landing' | 'login' | 'register'>('landing');
 
   if (loading) {
     return (
@@ -22,13 +23,14 @@ export default function Home() {
     return <Dashboard />;
   }
 
-  return (
-    <>
-      {showLogin ? (
-        <LoginForm onSwitchToRegister={() => setShowLogin(false)} />
-      ) : (
-        <RegisterForm onSwitchToLogin={() => setShowLogin(true)} />
-      )}
-    </>
-  );
+  // Show different views based on state
+  if (view === 'login') {
+    return <LoginForm onSwitchToRegister={() => setView('register')} />;
+  }
+
+  if (view === 'register') {
+    return <RegisterForm onSwitchToLogin={() => setView('login')} />;
+  }
+
+  return <LandingPage onGetStarted={() => setView('register')} />;
 }
