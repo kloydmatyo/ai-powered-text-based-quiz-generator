@@ -61,8 +61,23 @@ export async function POST(request: NextRequest) {
 
     questions.forEach((question) => {
       const userAnswer = answers[question._id.toString()];
-      if (userAnswer !== undefined && userAnswer === question.correctAnswer) {
-        correctAnswers++;
+      if (userAnswer !== undefined) {
+        let isCorrect = false;
+        
+        // Handle different question types
+        if (question.questionType === 'fill-in-blank') {
+          // Case-insensitive comparison for fill-in-blank
+          const userAnswerStr = String(userAnswer).trim().toLowerCase();
+          const correctAnswerStr = String(question.correctAnswer).trim().toLowerCase();
+          isCorrect = userAnswerStr === correctAnswerStr;
+        } else {
+          // Exact match for multiple-choice and true-false
+          isCorrect = userAnswer === question.correctAnswer;
+        }
+        
+        if (isCorrect) {
+          correctAnswers++;
+        }
       }
     });
 
@@ -80,12 +95,29 @@ export async function POST(request: NextRequest) {
     await submission.save();
 
     // Return score and correct answers for review
-    const results = questions.map((question) => ({
-      questionId: question._id,
-      correctAnswer: question.correctAnswer,
-      userAnswer: answers[question._id.toString()],
-      isCorrect: answers[question._id.toString()] === question.correctAnswer
-    }));
+    const results = questions.map((question) => {
+      const userAnswer = answers[question._id.toString()];
+      let isCorrect = false;
+      
+      if (userAnswer !== undefined) {
+        if (question.questionType === 'fill-in-blank') {
+          // Case-insensitive comparison for fill-in-blank
+          const userAnswerStr = String(userAnswer).trim().toLowerCase();
+          const correctAnswerStr = String(question.correctAnswer).trim().toLowerCase();
+          isCorrect = userAnswerStr === correctAnswerStr;
+        } else {
+          // Exact match for multiple-choice and true-false
+          isCorrect = userAnswer === question.correctAnswer;
+        }
+      }
+      
+      return {
+        questionId: question._id,
+        correctAnswer: question.correctAnswer,
+        userAnswer,
+        isCorrect
+      };
+    });
 
     return NextResponse.json(
       {
@@ -101,8 +133,15 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Quiz submission error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error name:', error.name);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { 
+        error: 'Internal server error', 
+        details: error.message,
+        errorName: error.name,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
       { status: 500 }
     );
   }

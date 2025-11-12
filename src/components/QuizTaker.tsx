@@ -162,6 +162,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
         const questionsWithoutAnswers = data.questions.map((q: Question) => ({
           _id: q._id,
           questionText: q.questionText,
+          questionType: q.questionType, // IMPORTANT: Include question type!
           answerChoices: q.answerChoices,
           quizId: q.quizId
         }));
@@ -185,7 +186,13 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
   };
 
   const handleSubmit = async () => {
-    if (Object.keys(userAnswers).length !== questions.length) {
+    // Check if all questions are answered (including non-empty strings for fill-in-blank)
+    const unansweredQuestions = questions.filter(q => {
+      const answer = userAnswers[q._id];
+      return answer === undefined || answer === null || (typeof answer === 'string' && answer.trim() === '');
+    });
+
+    if (unansweredQuestions.length > 0) {
       alert('Please answer all questions before submitting.');
       return;
     }
@@ -263,6 +270,12 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
   const hasAnsweredCurrent = currentQuestion && userAnswers[currentQuestion._id] !== undefined;
+  
+  // Check if all questions have valid answers
+  const allQuestionsAnswered = questions.every(q => {
+    const answer = userAnswers[q._id];
+    return answer !== undefined && answer !== null && !(typeof answer === 'string' && answer.trim() === '');
+  });
 
   // Results View
   if (submitted && showResults) {
@@ -417,14 +430,28 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
               {/* Answer Options */}
               <div className="space-y-3 md:space-y-4">
                 {currentQuestion.questionType === 'fill-in-blank' ? (
-                  <input
-                    type="text"
-                    value={(userAnswers[currentQuestion._id] as string) || ''}
-                    onChange={(e) => setUserAnswers({ ...userAnswers, [currentQuestion._id]: e.target.value })}
-                    disabled={submitted || alreadyCompleted}
-                    placeholder="Type your answer here..."
-                    className="w-full px-6 py-4 bg-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg placeholder-gray-500 focus:border-primary focus:outline-none transition-colors disabled:opacity-50"
-                  />
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={(userAnswers[currentQuestion._id] as string) || ''}
+                      onChange={(e) => setUserAnswers({ ...userAnswers, [currentQuestion._id]: e.target.value })}
+                      disabled={submitted || alreadyCompleted}
+                      placeholder="Type your answer here..."
+                      className="w-full px-6 py-4 bg-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg placeholder-gray-500 focus:border-primary focus:outline-none transition-colors disabled:opacity-50"
+                      autoFocus
+                    />
+                    {userAnswers[currentQuestion._id] && (userAnswers[currentQuestion._id] as string).trim() !== '' && (
+                      <div className="flex items-center gap-2 text-accent text-sm">
+                        <span>✓</span>
+                        <span>Answer entered ({(userAnswers[currentQuestion._id] as string).length} characters)</span>
+                      </div>
+                    )}
+                    {!submitted && !alreadyCompleted && (
+                      <p className="text-gray-400 text-sm">
+                        💡 Tip: Type your answer and click "Next" to continue
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   currentQuestion.answerChoices.map((choice, idx) => {
                     const isSelected = userAnswers[currentQuestion._id] === idx;
@@ -476,7 +503,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
                 {isLastQuestion ? (
                   <button
                     onClick={() => setShowConfirmSubmit(true)}
-                    disabled={Object.keys(userAnswers).length !== questions.length}
+                    disabled={!allQuestionsAnswered}
                     className="px-8 py-3 bg-accent hover:bg-accent/90 text-white rounded-xl font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     Submit Quiz →
@@ -503,10 +530,13 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
               <div className="text-5xl mb-4">🎯</div>
               <h3 className="text-2xl font-bold text-white mb-4">Submit Quiz?</h3>
               <p className="text-gray-300 mb-6">
-                You have answered {Object.keys(userAnswers).length} out of {questions.length} questions.
-                {Object.keys(userAnswers).length < questions.length && (
+                You have answered {questions.filter(q => {
+                  const answer = userAnswers[q._id];
+                  return answer !== undefined && answer !== null && !(typeof answer === 'string' && answer.trim() === '');
+                }).length} out of {questions.length} questions.
+                {!allQuestionsAnswered && (
                   <span className="block mt-2 text-yellow-400">
-                    ⚠️ Some questions are unanswered!
+                    ⚠️ Some questions are unanswered or have empty answers!
                   </span>
                 )}
               </p>

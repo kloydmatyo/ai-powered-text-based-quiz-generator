@@ -5,8 +5,9 @@ import React, { useState, useEffect } from 'react';
 interface Question {
   _id: string;
   questionText: string;
+  questionType: 'multiple-choice' | 'true-false' | 'fill-in-blank';
   answerChoices: string[];
-  correctAnswer: number;
+  correctAnswer: number | string;
   quizId: string;
 }
 
@@ -30,8 +31,9 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
   const [quizData, setQuizData] = useState({ title: quiz.title, description: quiz.description });
   const [newQuestion, setNewQuestion] = useState({
     questionText: '',
+    questionType: 'multiple-choice' as 'multiple-choice' | 'true-false' | 'fill-in-blank',
     answerChoices: ['', ''],
-    correctAnswer: 0
+    correctAnswer: 0 as number | string
   });
 
   useEffect(() => {

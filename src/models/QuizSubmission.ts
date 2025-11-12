@@ -3,7 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IQuizSubmission extends Document {
   quizId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
-  answers: { [key: string]: number }; // questionId: answerIndex
+  answers: { [key: string]: number | string }; // questionId: answerIndex (number) or answer text (string)
   score: number;
   submittedAt: Date;
 }
@@ -21,7 +21,7 @@ const QuizSubmissionSchema: Schema = new Schema({
   },
   answers: {
     type: Map,
-    of: Number,
+    of: Schema.Types.Mixed, // Allow both numbers (for multiple-choice) and strings (for fill-in-blank)
     required: true
   },
   score: {
