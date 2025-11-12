@@ -29,6 +29,9 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [editingQuiz, setEditingQuiz] = useState(false);
   const [quizData, setQuizData] = useState({ title: quiz.title, description: quiz.description });
+  const [regeneratingQuestionId, setRegeneratingQuestionId] = useState<string | null>(null);
+  const [showRegenerateModal, setShowRegenerateModal] = useState(false);
+  const [questionToRegenerate, setQuestionToRegenerate] = useState<string | null>(null);
   const [newQuestion, setNewQuestion] = useState({
     questionText: '',
     questionType: 'multiple-choice' as 'multiple-choice' | 'true-false' | 'fill-in-blank',
@@ -175,6 +178,197 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
       }
     } catch (error) {
       console.error('Error deleting question:', error);
+    }
+  };
+
+  const openRegenerateModal = (questionId: string) => {
+    setQuestionToRegenerate(questionId);
+    setShowRegenerateModal(true);
+  };
+
+  const closeRegenerateModal = () => {
+    setShowRegenerateModal(false);
+    setQuestionToRegenerate(null);
+  };
+
+  const confirmRegenerateQuestion = async () => {
+    if (!questionToRegenerate) return;
+
+    setShowRegenerateModal(false);
+    setRegeneratingQuestionId(questionToRegenerate);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const question = questions.find(q => q._id === questionToRegenerate);
+      
+      if (!question) {
+        throw new Error('Question not found');
+      }
+
+      // Build a more comprehensive context for AI generation
+      // Include quiz info and existing question as reference
+      let contextParts = [quiz.title];
+      
+      if (quiz.description) {
+        contextParts.push(quiz.description);
+      }
+      
+      // Add the current question as context to help AI understand the topic
+      contextParts.push(`Example question: ${question.questionText}`);
+      
+      // Add other questions as additional context
+      const otherQuestions = questions
+        .filter(q => q._id !== questionToRegenerate)
+        .slice(0, 3) // Use up to 3 other questions for context
+        .map(q => q.questionText);
+      
+      if (otherQuestions.length > 0) {
+        contextParts.push(`Related topics: ${otherQuestions.join('. ')}`);
+      }
+      
+      // Ensure we have enough text (minimum 50 characters required by API)
+      let context = contextParts.join('. ');
+      if (context.length < 50) {
+        context = `${context}. This is an educational quiz about ${quiz.title}. Generate relevant questions that test understanding of this topic.`;
+      }
+      
+      console.log('🔄 Regenerating question with context:', context.substring(0, 100) + '...');
+      
+      // Determine question types to request based on current question type
+      let questionTypes: string[] = [];
+      if (question.questionType === 'multiple-choice') {
+        questionTypes = ['multipleChoice'];
+      } else if (question.questionType === 'true-false') {
+        questionTypes = ['trueFalse'];
+      } else if (question.questionType === 'fill-in-blank') {
+        questionTypes = ['fillInTheBlank'];
+      }
+
+      // Call AI to generate a new question
+      const aiResponse = await fetch('/api/analyze-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          text: context,
+          questionTypes: questionTypes,
+          numberOfQuestions: 1,
+          difficulty: 'moderate'
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        const errorData = await aiResponse.json();
+        throw new Error(errorData.error || 'Failed to generate question');
+      }
+
+      const aiData = await aiResponse.json();
+      console.log('📊 AI Response:', aiData);
+      
+      // Extract the generated question based on type
+      let newQuestionData;
+      if (question.questionType === 'multiple-choice') {
+        if (aiData.questions?.multipleChoice?.length > 0) {
+          newQuestionData = aiData.questions.multipleChoice[0];
+        } else if (aiData.questions?.identification?.length > 0) {
+          // Fallback: Convert identification to multiple choice
+          const identQuestion = aiData.questions.identification[0];
+          newQuestionData = {
+            question: identQuestion.question,
+            options: identQuestion.options || ['Option A', 'Option B', 'Option C', 'Option D'],
+            correctAnswerIndex: identQuestion.correctAnswerIndex || 0
+          };
+        }
+      } else if (question.questionType === 'true-false') {
+        if (aiData.questions?.trueFalse?.length > 0) {
+          newQuestionData = aiData.questions.trueFalse[0];
+        } else if (aiData.questions?.identification?.length > 0) {
+          // Fallback: Convert identification to true/false
+          const identQuestion = aiData.questions.identification[0];
+          newQuestionData = {
+            question: identQuestion.question,
+            answer: 'True'
+          };
+        }
+      } else if (question.questionType === 'fill-in-blank') {
+        if (aiData.questions?.fillInTheBlank?.length > 0) {
+          newQuestionData = aiData.questions.fillInTheBlank[0];
+        } else if (aiData.questions?.identification?.length > 0) {
+          // Fallback: Convert identification to fill-in-blank
+          const identQuestion = aiData.questions.identification[0];
+          newQuestionData = {
+            question: identQuestion.question,
+            answer: identQuestion.answer || identQuestion.options?.[identQuestion.correctAnswerIndex || 0] || 'Answer'
+          };
+        }
+      }
+
+      if (!newQuestionData) {
+        console.error('No question data found in response:', aiData);
+        throw new Error('AI could not generate a question. The quiz topic might need more context. Try adding a description to your quiz.');
+      }
+
+      console.log('✨ Generated question data:', newQuestionData);
+
+      // Prepare the update data based on question type
+      let updateData: any = {
+        questionText: newQuestionData.question || newQuestionData.questionText || '',
+        questionType: question.questionType,
+      };
+
+      if (question.questionType === 'fill-in-blank') {
+        updateData.answerChoices = [];
+        updateData.correctAnswer = newQuestionData.answer || newQuestionData.correctAnswer || '';
+        
+        if (!updateData.correctAnswer) {
+          throw new Error('Generated question is missing the answer');
+        }
+      } else if (question.questionType === 'true-false') {
+        updateData.answerChoices = ['True', 'False'];
+        const answer = newQuestionData.answer || newQuestionData.correctAnswer;
+        updateData.correctAnswer = (answer === 'True' || answer === true || answer === 0) ? 0 : 1;
+      } else {
+        // multiple-choice
+        updateData.answerChoices = newQuestionData.options || newQuestionData.answerChoices || [];
+        updateData.correctAnswer = newQuestionData.correctAnswerIndex ?? newQuestionData.correctAnswer ?? 0;
+        
+        if (!updateData.answerChoices || updateData.answerChoices.length < 2) {
+          throw new Error('Generated question is missing answer choices');
+        }
+      }
+
+      if (!updateData.questionText) {
+        throw new Error('Generated question is missing question text');
+      }
+
+      console.log('💾 Updating question with data:', updateData);
+
+      // Update the question with new AI-generated content
+      const updateResponse = await fetch(`/api/questions/${questionToRegenerate}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (updateResponse.ok) {
+        const data = await updateResponse.json();
+        setQuestions(questions.map(q => q._id === questionToRegenerate ? data.question : q));
+        alert('✅ Question regenerated successfully!');
+      } else {
+        const errorData = await updateResponse.json();
+        throw new Error(errorData.error || 'Failed to update question');
+      }
+    } catch (error: any) {
+      console.error('Error regenerating question:', error);
+      alert(`❌ Failed to regenerate question: ${error.message}\n\nTip: Try adding a description to your quiz for better AI generation.`);
+    } finally {
+      setRegeneratingQuestionId(null);
+      setQuestionToRegenerate(null);
     }
   };
 
@@ -605,6 +799,29 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                     </div>
                     <div className="flex space-x-2">
                       <button
+                        onClick={() => openRegenerateModal(question._id)}
+                        disabled={regeneratingQuestionId === question._id}
+                        className="bg-accent hover:bg-green-600 text-white px-3 py-1 rounded text-sm flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Regenerate this question with AI"
+                      >
+                        {regeneratingQuestionId === question._id ? (
+                          <>
+                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            <span>Regenerating...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span>Regenerate</span>
+                          </>
+                        )}
+                      </button>
+                      <button
                         onClick={() => setEditingQuestion(question)}
                         className="bg-secondary hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
                       >
@@ -649,6 +866,61 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
           </div>
         </div>
       </main>
+
+      {/* Regenerate Confirmation Modal */}
+      {showRegenerateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-2xl p-8 max-w-md w-full border-2 border-accent shadow-2xl">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-full bg-accent bg-opacity-20 flex items-center justify-center">
+                <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white">Regenerate Question?</h3>
+            </div>
+            
+            <p className="text-gray-300 mb-6 leading-relaxed">
+              This will use AI to generate a completely new question based on your quiz topic. 
+              The current question will be permanently replaced.
+            </p>
+
+            <div className="bg-gray-900 rounded-lg p-4 mb-6 border border-gray-700">
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <div className="text-sm text-gray-400">
+                  <p className="font-medium text-gray-300 mb-1">What happens:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>AI generates a new question</li>
+                    <li>Same question type is maintained</li>
+                    <li>Original question is replaced</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={closeRegenerateModal}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold text-gray-300 bg-gray-700 hover:bg-gray-600 transition-colors duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRegenerateQuestion}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold text-white bg-accent hover:bg-green-600 transition-colors duration-200 flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Regenerate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

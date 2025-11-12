@@ -107,24 +107,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             >
               Create Your First Quiz
             </button>
-            <button
-              className="px-8 py-4 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-105 border-2 w-full sm:w-auto"
-              style={{ 
-                color: '#A5B4FC',
-                borderColor: '#4F46E5',
-                backgroundColor: 'rgba(79, 70, 229, 0.1)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(79, 70, 229, 0.2)';
-                e.currentTarget.style.borderColor = '#8B5CF6';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(79, 70, 229, 0.1)';
-                e.currentTarget.style.borderColor = '#4F46E5';
-              }}
-            >
-              Watch Demo
-            </button>
           </div>
 
           {/* Stats */}
