@@ -15,6 +15,7 @@ interface Quiz {
   _id: string;
   title: string;
   description: string;
+  sourceText?: string;
 }
 
 interface QuestionManagerProps {
@@ -205,34 +206,45 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
         throw new Error('Question not found');
       }
 
-      // Build a more comprehensive context for AI generation
-      // Include quiz info and existing question as reference
-      let contextParts = [quiz.title];
+      // Use the original source text if available, otherwise build context from quiz info
+      let context: string;
       
-      if (quiz.description) {
-        contextParts.push(quiz.description);
+      console.log('📋 Quiz sourceText available:', !!quiz.sourceText, 'Length:', quiz.sourceText?.length || 0);
+      
+      if (quiz.sourceText && quiz.sourceText.length >= 50) {
+        // Use the original PDF/document content for best results
+        context = quiz.sourceText;
+        console.log('✅ Using original source text for regeneration');
+        console.log('🔄 Source text preview:', context.substring(0, 200) + '...');
+      } else {
+        // Fallback: Build context from quiz info and existing questions
+        let contextParts = [quiz.title];
+        
+        if (quiz.description) {
+          contextParts.push(quiz.description);
+        }
+        
+        // Add the current question as context to help AI understand the topic
+        contextParts.push(`Example question: ${question.questionText}`);
+        
+        // Add other questions as additional context
+        const otherQuestions = questions
+          .filter(q => q._id !== questionToRegenerate)
+          .slice(0, 3) // Use up to 3 other questions for context
+          .map(q => q.questionText);
+        
+        if (otherQuestions.length > 0) {
+          contextParts.push(`Related topics: ${otherQuestions.join('. ')}`);
+        }
+        
+        // Ensure we have enough text (minimum 50 characters required by API)
+        context = contextParts.join('. ');
+        if (context.length < 50) {
+          context = `${context}. This is an educational quiz about ${quiz.title}. Generate relevant questions that test understanding of this topic.`;
+        }
+        
+        console.log('🔄 Regenerating question with fallback context:', context.substring(0, 100) + '...');
       }
-      
-      // Add the current question as context to help AI understand the topic
-      contextParts.push(`Example question: ${question.questionText}`);
-      
-      // Add other questions as additional context
-      const otherQuestions = questions
-        .filter(q => q._id !== questionToRegenerate)
-        .slice(0, 3) // Use up to 3 other questions for context
-        .map(q => q.questionText);
-      
-      if (otherQuestions.length > 0) {
-        contextParts.push(`Related topics: ${otherQuestions.join('. ')}`);
-      }
-      
-      // Ensure we have enough text (minimum 50 characters required by API)
-      let context = contextParts.join('. ');
-      if (context.length < 50) {
-        context = `${context}. This is an educational quiz about ${quiz.title}. Generate relevant questions that test understanding of this topic.`;
-      }
-      
-      console.log('🔄 Regenerating question with context:', context.substring(0, 100) + '...');
       
       // Determine question types to request based on current question type
       let questionTypes: string[] = [];
@@ -272,14 +284,41 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
       if (question.questionType === 'multiple-choice') {
         if (aiData.questions?.multipleChoice?.length > 0) {
           newQuestionData = aiData.questions.multipleChoice[0];
+          console.log('✅ Got multiple choice question from AI');
         } else if (aiData.questions?.identification?.length > 0) {
-          // Fallback: Convert identification to multiple choice
+          // AI generated identification instead of multiple choice
+          // We need to create proper distractors from the context
           const identQuestion = aiData.questions.identification[0];
+          console.warn('⚠️ AI generated identification question instead of multiple choice, converting...');
+          
+          // Extract the correct answer
+          const correctAnswer = identQuestion.answer;
+          
+          // Try to extract other potential answers from the context to create distractors
+          // This is a simple approach - ideally the AI should generate proper MCQs
+          const words = context.split(/\s+/);
+          const potentialDistractors = words
+            .filter(w => w.length > 3 && w !== correctAnswer && /^[A-Z]/.test(w))
+            .slice(0, 3);
+          
+          // Create options with the correct answer and distractors
+          const options = [
+            correctAnswer,
+            ...potentialDistractors,
+            'None of the above'
+          ].slice(0, 4);
+          
+          // Shuffle options
+          const shuffledOptions = options.sort(() => Math.random() - 0.5);
+          const correctIndex = shuffledOptions.indexOf(correctAnswer);
+          
           newQuestionData = {
-            question: identQuestion.question,
-            options: identQuestion.options || ['Option A', 'Option B', 'Option C', 'Option D'],
-            correctAnswerIndex: identQuestion.correctAnswerIndex || 0
+            question: identQuestion.question.replace('Identify', 'What is'),
+            options: shuffledOptions,
+            correctAnswerIndex: correctIndex
           };
+          
+          console.log('🔄 Converted to MCQ with options:', shuffledOptions);
         }
       } else if (question.questionType === 'true-false') {
         if (aiData.questions?.trueFalse?.length > 0) {
@@ -300,7 +339,7 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
           const identQuestion = aiData.questions.identification[0];
           newQuestionData = {
             question: identQuestion.question,
-            answer: identQuestion.answer || identQuestion.options?.[identQuestion.correctAnswerIndex || 0] || 'Answer'
+            answer: identQuestion.answer || 'Answer'
           };
         }
       }
@@ -896,6 +935,11 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                     <li>AI generates a new question</li>
                     <li>Same question type is maintained</li>
                     <li>Original question is replaced</li>
+                    {quiz.sourceText ? (
+                      <li className="text-green-400">✓ Using original document content</li>
+                    ) : (
+                      <li className="text-yellow-400">⚠ Using quiz context (no source document)</li>
+                    )}
                   </ul>
                 </div>
               </div>

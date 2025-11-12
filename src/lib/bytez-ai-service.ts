@@ -123,11 +123,51 @@ export class BytezAIService {
   ): string {
     const counts = this.distributeQuestions(numberOfQuestions, questionTypes);
     
+    // Build the counts list only for requested types
+    const countsList: string[] = [];
+    if (counts.mcq > 0) countsList.push(`- ${counts.mcq} Multiple Choice Questions (4 options each with specific, relevant answers from the text)`);
+    if (counts.trueFalse > 0) countsList.push(`- ${counts.trueFalse} True/False Questions`);
+    if (counts.fillBlank > 0) countsList.push(`- ${counts.fillBlank} Fill-in-the-Blank Questions`);
+    if (counts.identification > 0) countsList.push(`- ${counts.identification} Identification Questions`);
+    
+    // Build JSON template only for requested types
+    const jsonParts: string[] = [];
+    if (counts.mcq > 0) {
+      jsonParts.push(`  "multipleChoice": [
+    {
+      "question": "Question text here?",
+      "options": ["Specific answer from text", "Another specific answer", "Third specific answer", "Fourth specific answer"],
+      "correctAnswer": 0
+    }
+  ]`);
+    }
+    if (counts.trueFalse > 0) {
+      jsonParts.push(`  "trueFalse": [
+    {
+      "statement": "Statement here",
+      "answer": true
+    }
+  ]`);
+    }
+    if (counts.fillBlank > 0) {
+      jsonParts.push(`  "fillInTheBlank": [
+    {
+      "sentence": "Sentence with ______ blank",
+      "answer": "correct word"
+    }
+  ]`);
+    }
+    if (counts.identification > 0) {
+      jsonParts.push(`  "identification": [
+    {
+      "question": "Identify the person/concept described...",
+      "answer": "Correct identification"
+    }
+  ]`);
+    }
+    
     return `Analyze the following text and generate a structured questionnaire with exactly these counts:
-- ${counts.mcq} Multiple Choice Questions (4 options each, labeled A-D)
-- ${counts.trueFalse} True/False Questions
-- ${counts.fillBlank} Fill-in-the-Blank Questions
-- ${counts.identification} Identification Questions
+${countsList.join('\n')}
 
 Total Questions Required: ${numberOfQuestions}
 Difficulty Level: ${difficulty}
@@ -139,41 +179,45 @@ ${text.substring(0, 3000)}
 
 Generate questions in this EXACT JSON format (no markdown, no code blocks):
 {
-  "multipleChoice": [
+  "multipleChoice": [${counts.mcq > 0 ? `
     {
       "question": "Question text here?",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "options": ["Specific answer from text", "Another specific answer", "Third specific answer", "Fourth specific answer"],
       "correctAnswer": 0
-    }
+    }` : ''}
   ],
-  "trueFalse": [
+  "trueFalse": [${counts.trueFalse > 0 ? `
     {
       "statement": "Statement here",
       "answer": true
-    }
+    }` : ''}
   ],
-  "fillInTheBlank": [
+  "fillInTheBlank": [${counts.fillBlank > 0 ? `
     {
       "sentence": "Sentence with ______ blank",
       "answer": "correct word"
-    }
+    }` : ''}
   ],
-  "identification": [
+  "identification": [${counts.identification > 0 ? `
     {
       "question": "Identify the person/concept described...",
       "answer": "Correct identification"
-    }
+    }` : ''}
   ]
 }
 
-Requirements:
-- All questions must be directly based on the provided text
+CRITICAL Requirements:
+- Generate EXACTLY ${numberOfQuestions} question(s) total with the distribution shown above
+- All questions must be directly based on the provided text content
+- Multiple choice: Use SPECIFIC, RELEVANT answers extracted from the text, NOT generic placeholders like "Option A/B/C/D"
+- Multiple choice: Each option should be a distinct, plausible answer from the text
 - Multiple choice: correctAnswer is the index (0-3) of the correct option
 - True/False: answer must be boolean (true or false)
 - Fill-in-the-blank: use "______" for blanks
 - Identification: ask to identify people, concepts, terms, or entities from the text
 - Ensure questions match the ${difficulty} difficulty level
-- Return ONLY valid JSON, no additional text or formatting`;
+- Include all four arrays (multipleChoice, trueFalse, fillInTheBlank, identification) even if some are empty
+- Return ONLY valid JSON with the exact structure shown above, no additional text or formatting`;
   }
 
   private parseAIResponse(content: string): QuestionSet {

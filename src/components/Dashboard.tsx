@@ -481,7 +481,8 @@ const Dashboard: React.FC = () => {
             description: editableQuiz.description,
             difficulty: editableQuiz.difficulty,
             questionTypes: editableQuiz.questionTypes,
-            numberOfQuestions: editableQuiz.numberOfQuestions
+            numberOfQuestions: editableQuiz.numberOfQuestions,
+            sourceText: editableQuiz.sourceText || '' // Include the original text for regeneration
           }),
         });
 

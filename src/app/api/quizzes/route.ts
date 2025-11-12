@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { title, description, difficulty, questionTypes, numberOfQuestions } = await request.json();
+    const { title, description, difficulty, questionTypes, numberOfQuestions, sourceText } = await request.json();
 
     // Check if user is an instructor
     if (auth.user.role !== 'instructor') {
@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
       difficulty: difficulty || 'moderate',
       questionTypes: questionTypes && questionTypes.length > 0 ? questionTypes : ['multiple-choice'],
       numberOfQuestions: numberOfQuestions || 10,
+      sourceText: sourceText || '', // Store the original text content for regeneration
       userId: auth.userId
     });
 

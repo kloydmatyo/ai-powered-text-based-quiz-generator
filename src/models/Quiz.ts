@@ -7,6 +7,7 @@ export interface IQuiz extends Document {
   difficulty: 'easy' | 'moderate' | 'challenging';
   questionTypes: string[];
   numberOfQuestions: number;
+  sourceText?: string; // Original text content from PDF/file upload
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +43,10 @@ const QuizSchema: Schema = new Schema({
     default: 10,
     min: [1, 'Must have at least 1 question'],
     max: [100, 'Cannot exceed 100 questions']
+  },
+  sourceText: {
+    type: String,
+    maxlength: [1000000, 'Source text cannot exceed 1,000,000 characters']
   },
   userId: {
     type: Schema.Types.ObjectId,
