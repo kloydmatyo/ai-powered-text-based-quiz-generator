@@ -1127,85 +1127,400 @@ const Dashboard: React.FC = () => {
       }
     };
 
+    // Calculate statistics
+    const avgScore = submissions.length > 0 
+      ? Math.round(submissions.reduce((acc, sub) => acc + sub.score, 0) / submissions.length)
+      : 0;
+    const passRate = submissions.length > 0
+      ? Math.round((submissions.filter(sub => sub.score >= 60).length / submissions.length) * 100)
+      : 0;
+    const highestScore = submissions.length > 0
+      ? Math.max(...submissions.map(sub => sub.score))
+      : 0;
+
+    // Export to CSV function
+    const exportToCSV = () => {
+      if (submissions.length === 0) {
+        alert('No submissions to export');
+        return;
+      }
+
+      // CSV Header
+      const csvContent = [
+        ['Learner', 'Email', 'Score (%)', 'Status', 'Submitted Date', 'Submitted Time'],
+        ...submissions.map(submission => {
+          const date = new Date(submission.submittedAt);
+          return [
+            submission.userId?.username || 'Unknown',
+            submission.userId?.email || 'N/A',
+            submission.score,
+            submission.score >= 60 ? 'Passed' : 'Failed',
+            date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+          ];
+        })
+      ];
+
+      // Add summary statistics at the end
+      csvContent.push([]);
+      csvContent.push(['Summary Statistics']);
+      csvContent.push(['Total Submissions', submissions.length]);
+      csvContent.push(['Average Score', `${avgScore}%`]);
+      csvContent.push(['Pass Rate', `${passRate}%`]);
+      csvContent.push(['Highest Score', `${highestScore}%`]);
+
+      // Convert to CSV string
+      const csvString = csvContent
+        .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${quiz.title}_submissions_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
     return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-6xl mx-auto py-8 px-4">
-          <button
-            onClick={() => setViewingSubmissions(null)}
-            className="mb-6 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md"
-          >
-            ← Back to Quizzes
-          </button>
-
-          <div className="bg-gray-800 rounded-lg p-6 mb-6">
-            <h1 className="text-3xl font-bold text-white mb-2">{quiz.title}</h1>
-            <p className="text-gray-300">Quiz Submissions</p>
+      <div className="min-h-screen" style={{ backgroundColor: '#0F172A' }}>
+        {/* Header */}
+        <div 
+          className="border-b backdrop-blur-xl sticky top-0 z-10"
+          style={{
+            background: 'rgba(15, 23, 42, 0.95)',
+            borderColor: 'rgba(79, 70, 229, 0.2)',
+            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)'
+          }}
+        >
+          <div className="max-w-7xl mx-auto px-6 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setViewingSubmissions(null)}
+                  className="p-2 rounded-xl transition-all duration-200 hover:scale-110"
+                  style={{
+                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                    border: '2px solid rgba(79, 70, 229, 0.3)',
+                    color: '#A5B4FC'
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                </button>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-white">{quiz.title}</h1>
+                  <p className="text-gray-400 text-sm">Quiz Submissions & Analytics</p>
+                </div>
+              </div>
+              <button 
+                onClick={exportToCSV}
+                disabled={submissions.length === 0}
+                className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                style={{
+                  background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export to CSV
+              </button>
+            </div>
           </div>
+        </div>
 
+        <div className="max-w-7xl mx-auto px-6 py-8">
           {loading ? (
-            <div className="text-center py-12">
-              <div className="text-white text-xl">Loading submissions...</div>
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div 
+                  className="w-16 h-16 rounded-full mx-auto mb-4 animate-spin"
+                  style={{
+                    border: '4px solid rgba(79, 70, 229, 0.2)',
+                    borderTopColor: '#4F46E5'
+                  }}
+                />
+                <p className="text-white text-xl">Loading submissions...</p>
+              </div>
             </div>
           ) : submissions.length === 0 ? (
-            <div className="bg-gray-800 rounded-lg p-8 text-center">
-              <p className="text-gray-300 text-lg">No submissions yet</p>
-              <p className="text-gray-400 text-sm mt-2">Learners haven't taken this quiz yet</p>
+            <div 
+              className="rounded-3xl p-12 text-center border-2"
+              style={{
+                background: 'rgba(15, 23, 42, 0.6)',
+                borderColor: 'rgba(79, 70, 229, 0.2)',
+                backdropFilter: 'blur(20px)'
+              }}
+            >
+              <div 
+                className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
+                  border: '2px solid rgba(79, 70, 229, 0.3)'
+                }}
+              >
+                <svg className="w-12 h-12 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">No Submissions Yet</h3>
+              <p className="text-gray-400">Learners haven't taken this quiz yet. Share it to get started!</p>
             </div>
           ) : (
-            <div className="bg-gray-800 rounded-lg overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                      Learner
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                      Score
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                      Submitted
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {submissions.map((submission) => (
-                    <tr key={submission._id} className="hover:bg-gray-750">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                        {submission.userId?.username || 'Unknown'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                        {submission.userId?.email || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`font-semibold ${
-                          submission.score >= 80 ? 'text-green-400' :
-                          submission.score >= 60 ? 'text-yellow-400' :
-                          'text-red-400'
-                        }`}>
-                          {submission.score}%
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                        {new Date(submission.submittedAt).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          submission.score >= 60 ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'
-                        }`}>
-                          {submission.score >= 60 ? 'Passed' : 'Failed'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <>
+              {/* Statistics Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                {/* Total Submissions */}
+                <div 
+                  className="rounded-2xl p-6 border-2 transition-all duration-200 hover:scale-[1.02]"
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    borderColor: 'rgba(79, 70, 229, 0.3)',
+                    backdropFilter: 'blur(20px)',
+                    boxShadow: '0 4px 16px rgba(79, 70, 229, 0.2)'
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-12 h-12 rounded-xl flex items-center justify-center"
+                      style={{
+                        background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)'
+                      }}
+                    >
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-white">{submissions.length}</p>
+                      <p className="text-sm text-gray-400 font-medium">Total Submissions</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Average Score */}
+                <div 
+                  className="rounded-2xl p-6 border-2 transition-all duration-200 hover:scale-[1.02]"
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    borderColor: 'rgba(139, 92, 246, 0.3)',
+                    backdropFilter: 'blur(20px)',
+                    boxShadow: '0 4px 16px rgba(139, 92, 246, 0.2)'
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-12 h-12 rounded-xl flex items-center justify-center"
+                      style={{
+                        background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)'
+                      }}
+                    >
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-white">{avgScore}%</p>
+                      <p className="text-sm text-gray-400 font-medium">Average Score</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pass Rate */}
+                <div 
+                  className="rounded-2xl p-6 border-2 transition-all duration-200 hover:scale-[1.02]"
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    borderColor: 'rgba(52, 211, 153, 0.3)',
+                    backdropFilter: 'blur(20px)',
+                    boxShadow: '0 4px 16px rgba(52, 211, 153, 0.2)'
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-12 h-12 rounded-xl flex items-center justify-center"
+                      style={{
+                        background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)'
+                      }}
+                    >
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-white">{passRate}%</p>
+                      <p className="text-sm text-gray-400 font-medium">Pass Rate</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Highest Score */}
+                <div 
+                  className="rounded-2xl p-6 border-2 transition-all duration-200 hover:scale-[1.02]"
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    borderColor: 'rgba(251, 191, 36, 0.3)',
+                    backdropFilter: 'blur(20px)',
+                    boxShadow: '0 4px 16px rgba(251, 191, 36, 0.2)'
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-12 h-12 rounded-xl flex items-center justify-center"
+                      style={{
+                        background: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)'
+                      }}
+                    >
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-white">{highestScore}%</p>
+                      <p className="text-sm text-gray-400 font-medium">Highest Score</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submissions Table */}
+              <div 
+                className="rounded-3xl overflow-hidden border-2"
+                style={{
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  borderColor: 'rgba(79, 70, 229, 0.2)',
+                  backdropFilter: 'blur(20px)'
+                }}
+              >
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr 
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
+                          borderBottom: '2px solid rgba(79, 70, 229, 0.3)'
+                        }}
+                      >
+                        <th className="px-6 py-4 text-left text-xs font-bold text-indigo-300 uppercase tracking-wider">
+                          Learner
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-indigo-300 uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-indigo-300 uppercase tracking-wider">
+                          Score
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-indigo-300 uppercase tracking-wider">
+                          Submitted
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-indigo-300 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {submissions.map((submission, index) => (
+                        <tr 
+                          key={submission._id}
+                          className="transition-all duration-200 hover:scale-[1.01]"
+                          style={{
+                            borderBottom: index < submissions.length - 1 ? '1px solid rgba(79, 70, 229, 0.1)' : 'none',
+                            backgroundColor: 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(79, 70, 229, 0.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div 
+                                className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold"
+                                style={{
+                                  background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)'
+                                }}
+                              >
+                                {(submission.userId?.username || 'U').charAt(0).toUpperCase()}
+                              </div>
+                              <span className="text-white font-semibold">
+                                {submission.userId?.username || 'Unknown'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-gray-300">
+                            {submission.userId?.email || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="px-4 py-2 rounded-xl font-bold"
+                                style={{
+                                  backgroundColor: submission.score >= 80 
+                                    ? 'rgba(52, 211, 153, 0.2)' 
+                                    : submission.score >= 60 
+                                    ? 'rgba(251, 191, 36, 0.2)' 
+                                    : 'rgba(239, 68, 68, 0.2)',
+                                  border: `2px solid ${
+                                    submission.score >= 80 
+                                      ? 'rgba(52, 211, 153, 0.4)' 
+                                      : submission.score >= 60 
+                                      ? 'rgba(251, 191, 36, 0.4)' 
+                                      : 'rgba(239, 68, 68, 0.4)'
+                                  }`,
+                                  color: submission.score >= 80 
+                                    ? '#34D399' 
+                                    : submission.score >= 60 
+                                    ? '#FBBF24' 
+                                    : '#EF4444'
+                                }}
+                              >
+                                {submission.score}%
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-gray-300 text-sm">
+                            {new Date(submission.submittedAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span 
+                              className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider"
+                              style={{
+                                backgroundColor: submission.score >= 60 
+                                  ? 'rgba(52, 211, 153, 0.2)' 
+                                  : 'rgba(239, 68, 68, 0.2)',
+                                border: `2px solid ${
+                                  submission.score >= 60 
+                                    ? 'rgba(52, 211, 153, 0.4)' 
+                                    : 'rgba(239, 68, 68, 0.4)'
+                                }`,
+                                color: submission.score >= 60 ? '#34D399' : '#EF4444'
+                              }}
+                            >
+                              {submission.score >= 60 ? '✓ Passed' : '✗ Failed'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
