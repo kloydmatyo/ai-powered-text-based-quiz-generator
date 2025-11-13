@@ -143,7 +143,11 @@ const Dashboard: React.FC = () => {
     }
   };
 
-
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to log out?')) {
+      logout();
+    }
+  };
 
   const fetchQuizzes = async () => {
     try {
@@ -2715,7 +2719,7 @@ const Dashboard: React.FC = () => {
                 )}
                 {!sidebarCollapsed && (
                   <button
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
                     style={{
                       backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -3030,7 +3034,7 @@ const Dashboard: React.FC = () => {
                 </button>
                 
                 <button
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200"
                   style={{
                     backgroundColor: 'transparent',
@@ -4178,11 +4182,46 @@ const Dashboard: React.FC = () => {
                         onClick={async () => {
                           if (!newUsername.trim()) return;
                           setSavingUsername(true);
-                          // Simulate API call - replace with actual API call
-                          await new Promise(resolve => setTimeout(resolve, 1000));
-                          // Update user context here
-                          setSavingUsername(false);
-                          setEditingUsername(false);
+                          
+                          try {
+                            const token = localStorage.getItem('token');
+                            const response = await fetch('/api/user/profile', {
+                              method: 'PUT',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`,
+                              },
+                              body: JSON.stringify({ username: newUsername.trim() }),
+                            });
+
+                            if (response.ok) {
+                              const data = await response.json();
+                              // Update the user in AuthContext by re-verifying token
+                              const verifyResponse = await fetch('/api/auth/verify', {
+                                headers: {
+                                  'Authorization': `Bearer ${token}`,
+                                },
+                              });
+                              
+                              if (verifyResponse.ok) {
+                                const verifyData = await verifyResponse.json();
+                                // The AuthContext will update automatically on next render
+                                window.location.reload(); // Reload to update all user references
+                              }
+                              
+                              alert('Username updated successfully!');
+                              setEditingUsername(false);
+                              setNewUsername('');
+                            } else {
+                              const errorData = await response.json();
+                              alert(errorData.error || 'Failed to update username');
+                            }
+                          } catch (error) {
+                            console.error('Error updating username:', error);
+                            alert('An error occurred while updating username');
+                          } finally {
+                            setSavingUsername(false);
+                          }
                         }}
                         disabled={savingUsername || !newUsername.trim()}
                         className="px-4 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
