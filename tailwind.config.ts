@@ -16,6 +16,7 @@ export default {
         foreground: '#000000',
       },
       fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         inter: ['Inter', 'sans-serif'],
       },
     },
