@@ -61,6 +61,7 @@ const Dashboard: React.FC = () => {
   const [showJoinClassModal, setShowJoinClassModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<any>(null);
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>('all'); // 'all' or classId
+  const [quizSubmissionCounts, setQuizSubmissionCounts] = useState<{ [quizId: string]: number }>({});
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -82,6 +83,7 @@ const Dashboard: React.FC = () => {
     fetchStats();
     fetchClasses();
     fetchNotifications();
+    fetchSubmissionCounts();
     
     // Poll for new notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
@@ -153,6 +155,35 @@ const Dashboard: React.FC = () => {
       await fetchNotifications();
     } catch (error) {
       console.error('Error marking notifications as read:', error);
+    }
+  };
+
+  const fetchSubmissionCounts = async () => {
+    if (user?.role !== 'instructor') return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/quiz-submissions', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const submissions = data.submissions || [];
+        
+        // Count submissions per quiz
+        const counts: { [quizId: string]: number } = {};
+        submissions.forEach((sub: any) => {
+          const quizId = sub.quizId?._id || sub.quizId;
+          if (quizId) {
+            counts[quizId] = (counts[quizId] || 0) + 1;
+          }
+        });
+        
+        setQuizSubmissionCounts(counts);
+      }
+    } catch (error) {
+      console.error('Error fetching submission counts:', error);
     }
   };
 
@@ -2038,7 +2069,7 @@ const Dashboard: React.FC = () => {
             }}
           >
             <div className="flex gap-3">
-              {!isInstructor && selectedClass.quizzes && selectedClass.quizzes.length > 0 && (
+              {selectedClass.quizzes && selectedClass.quizzes.length > 0 && (
                 <button
                   onClick={() => {
                     setSelectedClassFilter(selectedClass._id);
@@ -2059,7 +2090,7 @@ const Dashboard: React.FC = () => {
               )}
               <button
                 onClick={() => setSelectedClass(null)}
-                className={`px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 ${!isInstructor && selectedClass.quizzes && selectedClass.quizzes.length > 0 ? '' : 'w-full'}`}
+                className={`px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 ${selectedClass.quizzes && selectedClass.quizzes.length > 0 ? '' : 'w-full'}`}
                 style={{
                   background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
                   boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
@@ -3549,8 +3580,8 @@ const Dashboard: React.FC = () => {
               )}
             </div>
 
-            {/* Class Filter Tabs for Learners */}
-            {user?.role === 'learner' && classes.length > 0 && (
+            {/* Class Filter Tabs for Both Instructors and Learners */}
+            {classes.length > 0 && (
               <div className="flex gap-2 overflow-x-auto pb-2">
                 <button
                   onClick={() => setSelectedClassFilter('all')}
@@ -3600,20 +3631,20 @@ const Dashboard: React.FC = () => {
               </div>
             )}
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {quizzes
-                .filter((quiz) => {
-                  // For instructors, show all their quizzes
-                  if (user?.role === 'instructor') return true;
-                  
-                  // For learners, filter by selected class
-                  if (selectedClassFilter === 'all') return true;
-                  
-                  // Check if quiz belongs to selected class
-                  const selectedClass = classes.find(c => c._id === selectedClassFilter);
-                  return selectedClass?.quizzes?.includes(quiz._id);
-                })
-                .map((quiz) => (
+            {(() => {
+              const filteredQuizzes = quizzes.filter((quiz) => {
+                // Filter by selected class for both instructors and learners
+                if (selectedClassFilter === 'all') return true;
+                
+                // Check if quiz belongs to selected class
+                const selectedClass = classes.find(c => c._id === selectedClassFilter);
+                return selectedClass?.quizzes?.includes(quiz._id);
+              });
+
+              return (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredQuizzes.map((quiz) => (
                 <div 
                   key={quiz._id}
                   className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
@@ -3673,7 +3704,25 @@ const Dashboard: React.FC = () => {
                           ))}
                       </div>
                     )}
-                    {user?.role === 'instructor' && <div className="mb-4"></div>}
+                    
+                    {/* Submission count for instructors */}
+                    {user?.role === 'instructor' && (
+                      <div className="flex items-center gap-2 mb-4">
+                        <span 
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+                          style={{
+                            background: 'rgba(34, 211, 238, 0.2)',
+                            border: '1px solid rgba(34, 211, 238, 0.4)',
+                            color: '#67E8F9'
+                          }}
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                          {quizSubmissionCounts[quiz._id] || 0} {(quizSubmissionCounts[quiz._id] || 0) === 1 ? 'Submission' : 'Submissions'}
+                        </span>
+                      </div>
+                    )}
                     
                     <div className="flex gap-2">
                       <button 
@@ -3721,10 +3770,10 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-            
-            {quizzes.length === 0 && (
+                    ))}
+                  </div>
+                  
+                  {filteredQuizzes.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20">
                 <div 
                   className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
@@ -3738,17 +3787,17 @@ const Dashboard: React.FC = () => {
                   </svg>
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-2">
-                  {user?.role === 'instructor' 
-                    ? 'No Quizzes Created Yet' 
-                    : selectedClassFilter !== 'all' 
-                      ? 'No Quizzes in This Class' 
+                  {selectedClassFilter !== 'all' 
+                    ? 'No Quizzes in This Class' 
+                    : user?.role === 'instructor'
+                      ? 'No Quizzes Created Yet'
                       : 'No Quizzes Available'}
                 </h3>
                 <p className="text-gray-400 text-center max-w-md mb-6">
-                  {user?.role === 'instructor' 
-                    ? 'Create your first quiz to get started with QuizMate'
-                    : selectedClassFilter !== 'all'
-                      ? 'This class doesn\'t have any quizzes yet. Check back later or try another class.'
+                  {selectedClassFilter !== 'all'
+                    ? 'This class doesn\'t have any quizzes yet. Check back later or try another class.'
+                    : user?.role === 'instructor' 
+                      ? 'Create your first quiz to get started with QuizMate'
                       : 'Join a class to access quizzes from your instructors'}
                 </p>
                 {user?.role === 'instructor' && (
@@ -3763,8 +3812,11 @@ const Dashboard: React.FC = () => {
                     Create Your First Quiz
                   </button>
                 )}
-              </div>
-            )}
+                  </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
 
