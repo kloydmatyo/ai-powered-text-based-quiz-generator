@@ -279,35 +279,182 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
 
   // Results View
   if (submitted && showResults) {
+    const correctAnswers = questions.filter((q) => {
+      const userAnswer = userAnswers[q._id];
+      return q.questionType === 'fill-in-blank' 
+        ? userAnswer === q.correctAnswer
+        : userAnswer === q.correctAnswer;
+    }).length;
+    const totalQuestions = questions.length;
+    const percentage = score || 0;
+
     return (
-      <div className="min-h-screen bg-background">
-        {/* Top Bar */}
-        <div className="bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-10">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
+      <div className="min-h-screen" style={{ backgroundColor: '#0F172A' }}>
+        {/* Modern Top Bar */}
+        <div 
+          className="border-b-2 backdrop-blur-xl sticky top-0 z-50"
+          style={{
+            background: 'rgba(15, 23, 42, 0.95)',
+            borderColor: 'rgba(79, 70, 229, 0.3)',
+            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)'
+          }}
+        >
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl md:text-2xl font-bold text-white">{quiz.title}</h1>
-              <button onClick={onBack} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors">
-                ← Back
+              <div className="flex items-center gap-4">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)'
+                  }}
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h1 className="text-xl md:text-2xl font-bold text-white">{quiz.title}</h1>
+              </div>
+              <button 
+                onClick={onBack} 
+                className="px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                style={{
+                  backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                  border: '2px solid rgba(139, 92, 246, 0.3)',
+                  color: '#A78BFA'
+                }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back
               </button>
             </div>
           </div>
         </div>
 
         {/* Results Content */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-          {/* Score Card */}
-          <div className="bg-gradient-to-br from-primary to-secondary rounded-2xl p-8 text-center text-white mb-8 shadow-2xl">
-            <div className="text-6xl mb-4">{score && score >= 60 ? '🎉' : '📊'}</div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-2">Quiz Completed!</h2>
-            <p className="text-xl md:text-2xl mb-4">Your Score: {score}%</p>
-            <p className="text-blue-100">
-              {score && score >= 80 ? 'Excellent work!' : score && score >= 60 ? 'Good job!' : 'Keep practicing!'}
-            </p>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+          {/* Hero Score Card */}
+          <div 
+            className="rounded-3xl p-8 md:p-12 text-center mb-12 border-2 relative overflow-hidden"
+            style={{
+              background: percentage >= 80 
+                ? 'linear-gradient(135deg, rgba(52, 211, 153, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%)'
+                : percentage >= 60
+                  ? 'linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)'
+                  : 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.2) 100%)',
+              borderColor: percentage >= 80 ? 'rgba(52, 211, 153, 0.4)' : percentage >= 60 ? 'rgba(79, 70, 229, 0.4)' : 'rgba(239, 68, 68, 0.4)',
+              boxShadow: percentage >= 80 
+                ? '0 20px 50px rgba(52, 211, 153, 0.3)'
+                : percentage >= 60
+                  ? '0 20px 50px rgba(79, 70, 229, 0.3)'
+                  : '0 20px 50px rgba(239, 68, 68, 0.3)'
+            }}
+          >
+            <div className="relative z-10">
+              <div className="text-7xl md:text-8xl mb-6">
+                {percentage >= 80 ? '🎉' : percentage >= 60 ? '👏' : '📚'}
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                {percentage >= 80 ? 'Outstanding!' : percentage >= 60 ? 'Well Done!' : 'Keep Learning!'}
+              </h2>
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <div 
+                  className="text-6xl md:text-7xl font-black"
+                  style={{
+                    background: percentage >= 80 
+                      ? 'linear-gradient(135deg, #34D399 0%, #10B981 100%)'
+                      : percentage >= 60
+                        ? 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)'
+                        : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}
+                >
+                  {percentage}%
+                </div>
+              </div>
+              <p className="text-xl text-gray-300 mb-8">
+                You answered <span className="font-bold text-white">{correctAnswers}</span> out of <span className="font-bold text-white">{totalQuestions}</span> questions correctly
+              </p>
+              
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                <div 
+                  className="rounded-2xl p-6 border-2"
+                  style={{
+                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                    borderColor: 'rgba(52, 211, 153, 0.3)'
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    <svg className="w-6 h-6 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-3xl font-bold text-white">{correctAnswers}</span>
+                  </div>
+                  <p className="text-sm text-gray-400 font-semibold">Correct</p>
+                </div>
+                
+                <div 
+                  className="rounded-2xl p-6 border-2"
+                  style={{
+                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                    borderColor: 'rgba(239, 68, 68, 0.3)'
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    <svg className="w-6 h-6 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-3xl font-bold text-white">{totalQuestions - correctAnswers}</span>
+                  </div>
+                  <p className="text-sm text-gray-400 font-semibold">Incorrect</p>
+                </div>
+                
+                <div 
+                  className="rounded-2xl p-6 border-2"
+                  style={{
+                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                    borderColor: 'rgba(79, 70, 229, 0.3)'
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    <svg className="w-6 h-6 text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                      <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-3xl font-bold text-white">{totalQuestions}</span>
+                  </div>
+                  <p className="text-sm text-gray-400 font-semibold">Total</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Review Answers */}
+          {/* Review Section Header */}
+          <div className="flex items-center gap-4 mb-8">
+            <div 
+              className="w-14 h-14 rounded-xl flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)'
+              }}
+            >
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-3xl font-bold text-white">Review Your Answers</h3>
+              <p className="text-gray-400">See what you got right and where you can improve</p>
+            </div>
+          </div>
+
+          {/* Questions Review */}
           <div className="space-y-6">
-            <h3 className="text-2xl font-bold text-white mb-4">Review Your Answers</h3>
             {questions.map((question, index) => {
               const userAnswer = userAnswers[question._id];
               const isCorrect = question.questionType === 'fill-in-blank' 
@@ -315,39 +462,135 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
                 : userAnswer === question.correctAnswer;
               
               return (
-                <div key={question._id} className="bg-gray-800 rounded-xl p-6 border-2" style={{
-                  borderColor: isCorrect ? '#34D399' : '#EF4444'
-                }}>
-                  <div className="flex items-start justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-white flex-1">
-                      Question {index + 1}: {question.questionText}
-                    </h4>
-                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                      isCorrect ? 'bg-accent/20 text-accent' : 'bg-red-500/20 text-red-400'
-                    }`}>
-                      {isCorrect ? '✓ Correct' : '✗ Wrong'}
-                    </span>
+                <div 
+                  key={question._id} 
+                  className="rounded-2xl p-6 md:p-8 border-2 transition-all duration-300 hover:scale-[1.01]"
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    borderColor: isCorrect ? 'rgba(52, 211, 153, 0.4)' : 'rgba(239, 68, 68, 0.4)',
+                    boxShadow: isCorrect 
+                      ? '0 8px 24px rgba(52, 211, 153, 0.2)'
+                      : '0 8px 24px rgba(239, 68, 68, 0.2)'
+                  }}
+                >
+                  <div className="flex items-start gap-4 mb-6">
+                    <div 
+                      className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg flex-shrink-0"
+                      style={{
+                        backgroundColor: isCorrect ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                        color: isCorrect ? '#34D399' : '#F87171'
+                      }}
+                    >
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-white mb-2">
+                        {question.questionText}
+                      </h4>
+                      <span 
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold"
+                        style={{
+                          backgroundColor: isCorrect ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                          color: isCorrect ? '#34D399' : '#F87171'
+                        }}
+                      >
+                        {isCorrect ? (
+                          <>
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            Correct
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                            Incorrect
+                          </>
+                        )}
+                      </span>
+                    </div>
                   </div>
                   
                   {question.questionType === 'fill-in-blank' ? (
-                    <div className="space-y-2">
-                      <p className="text-gray-400 text-sm">Your Answer: <span className="text-white">{userAnswer as string}</span></p>
-                      <p className="text-accent text-sm">Correct Answer: <span className="font-semibold">{question.correctAnswer as string}</span></p>
+                    <div className="space-y-4 ml-16">
+                      <div 
+                        className="p-4 rounded-xl border-2"
+                        style={{
+                          backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                          borderColor: 'rgba(79, 70, 229, 0.3)'
+                        }}
+                      >
+                        <p className="text-sm text-gray-400 mb-1">Your Answer:</p>
+                        <p className="text-lg font-semibold text-white">{userAnswer as string || '(No answer)'}</p>
+                      </div>
+                      <div 
+                        className="p-4 rounded-xl border-2"
+                        style={{
+                          backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                          borderColor: 'rgba(52, 211, 153, 0.4)'
+                        }}
+                      >
+                        <p className="text-sm text-emerald-400 mb-1">Correct Answer:</p>
+                        <p className="text-lg font-bold text-white">{question.correctAnswer as string}</p>
+                      </div>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-3 ml-16">
                       {question.answerChoices.map((choice, idx) => {
                         const isUserAnswer = userAnswer === idx;
                         const isCorrectAnswer = question.correctAnswer === idx;
+                        
                         return (
-                          <div key={idx} className={`p-3 rounded-lg border-2 ${
-                            isCorrectAnswer ? 'bg-accent/10 border-accent' :
-                            isUserAnswer ? 'bg-red-500/10 border-red-500' :
-                            'bg-gray-900 border-gray-700'
-                          }`}>
-                            <span className="text-white">{String.fromCharCode(65 + idx)}. {choice}</span>
-                            {isCorrectAnswer && <span className="ml-2 text-accent">✓</span>}
-                            {isUserAnswer && !isCorrectAnswer && <span className="ml-2 text-red-400">✗</span>}
+                          <div 
+                            key={idx} 
+                            className="p-4 rounded-xl border-2 transition-all duration-200"
+                            style={{
+                              backgroundColor: isCorrectAnswer 
+                                ? 'rgba(52, 211, 153, 0.1)'
+                                : isUserAnswer 
+                                  ? 'rgba(239, 68, 68, 0.1)'
+                                  : 'rgba(30, 41, 59, 0.5)',
+                              borderColor: isCorrectAnswer 
+                                ? 'rgba(52, 211, 153, 0.4)'
+                                : isUserAnswer 
+                                  ? 'rgba(239, 68, 68, 0.4)'
+                                  : 'rgba(79, 70, 229, 0.2)'
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span 
+                                className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm"
+                                style={{
+                                  backgroundColor: isCorrectAnswer 
+                                    ? 'rgba(52, 211, 153, 0.3)'
+                                    : isUserAnswer 
+                                      ? 'rgba(239, 68, 68, 0.3)'
+                                      : 'rgba(79, 70, 229, 0.2)',
+                                  color: isCorrectAnswer 
+                                    ? '#34D399'
+                                    : isUserAnswer 
+                                      ? '#F87171'
+                                      : '#6B7280'
+                                }}
+                              >
+                                {String.fromCharCode(65 + idx)}
+                              </span>
+                              <span className={`flex-1 ${isCorrectAnswer || isUserAnswer ? 'text-white font-semibold' : 'text-gray-400'}`}>
+                                {choice}
+                              </span>
+                              {isCorrectAnswer && (
+                                <svg className="w-6 h-6 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                              {isUserAnswer && !isCorrectAnswer && (
+                                <svg className="w-6 h-6 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
