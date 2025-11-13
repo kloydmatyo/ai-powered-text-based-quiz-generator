@@ -51,11 +51,16 @@ const Dashboard: React.FC = () => {
     engagement: 0
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [savingUsername, setSavingUsername] = useState(false);
 
   useEffect(() => {
     fetchQuizzes();
     fetchStats();
   }, []);
+
+
 
   const fetchQuizzes = async () => {
     try {
@@ -2236,66 +2241,214 @@ const Dashboard: React.FC = () => {
         )}
 
         {activeView === 'analytics' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Analytics Dashboard</h2>
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <h3 className="text-lg font-bold text-white mb-4">Quiz Performance</h3>
-              <div className="h-64 flex items-end justify-around gap-2">
+          <div className="space-y-8">
+            {/* Page Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold text-white mb-2">Analytics Dashboard</h2>
+                <p className="text-gray-400">Track your quiz performance and engagement metrics</p>
+              </div>
+              <button 
+                className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                style={{
+                  background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                  boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export Report
+              </button>
+            </div>
+
+            {/* Performance Chart */}
+            <div 
+              className="rounded-3xl p-8 border-2"
+              style={{
+                background: 'rgba(15, 23, 42, 0.6)',
+                borderColor: 'rgba(79, 70, 229, 0.2)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+              }}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)'
+                  }}
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Weekly Performance</h3>
+                  <p className="text-sm text-gray-400">Average quiz scores over the last 7 days</p>
+                </div>
+              </div>
+              
+              <div className="h-72 flex items-end justify-around gap-3">
                 {[65, 78, 82, 71, 88, 75, 92].map((value, index) => (
-                  <div key={index} className="flex-1 flex flex-col items-center gap-2">
-                    <div className="w-full bg-gray-700 rounded-t-lg overflow-hidden" style={{ height: '200px' }}>
-                      <div className="w-full bg-gradient-to-t from-primary to-secondary rounded-t-lg transition-all" style={{ height: `${value}%` }}></div>
+                  <div key={index} className="flex-1 flex flex-col items-center gap-3 group">
+                    <div 
+                      className="relative w-full rounded-t-2xl overflow-hidden transition-all duration-300 group-hover:scale-105"
+                      style={{ height: '240px' }}
+                    >
+                      <div 
+                        className="absolute bottom-0 w-full rounded-t-2xl transition-all duration-500"
+                        style={{ 
+                          height: `${value}%`,
+                          background: `linear-gradient(to top, ${
+                            value >= 85 ? '#34D399' : value >= 70 ? '#8B5CF6' : '#4F46E5'
+                          }, ${
+                            value >= 85 ? '#10B981' : value >= 70 ? '#A78BFA' : '#6366F1'
+                          })`,
+                          boxShadow: `0 -4px 20px ${
+                            value >= 85 ? 'rgba(52, 211, 153, 0.4)' : value >= 70 ? 'rgba(139, 92, 246, 0.4)' : 'rgba(79, 70, 229, 0.4)'
+                          }`
+                        }}
+                      >
+                        <div className="absolute top-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-white font-bold text-sm bg-black/50 px-2 py-1 rounded-lg backdrop-blur-sm">
+                            {value}%
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-xs text-gray-400">Day {index + 1}</span>
+                    <span className="text-xs text-gray-400 font-medium">Day {index + 1}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                <h3 className="text-lg font-bold text-white mb-4">Top Performing Quizzes</h3>
+
+            {/* Two Column Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Top Performing Quizzes */}
+              <div 
+                className="rounded-3xl p-8 border-2"
+                style={{
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  borderColor: 'rgba(139, 92, 246, 0.2)',
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+                }}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)'
+                    }}
+                  >
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Top Performers</h3>
+                    <p className="text-sm text-gray-400">Best scoring quizzes</p>
+                  </div>
+                </div>
+                
                 <div className="space-y-3">
-                  {quizzes.slice(0, 5).map((quiz, index) => (
-                    <div key={quiz._id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '📝'}</span>
-                        <span className="text-white">{quiz.title}</span>
+                  {quizzes.slice(0, 5).map((quiz, index) => {
+                    const score = Math.floor(Math.random() * 30) + 70;
+                    return (
+                      <div 
+                        key={quiz._id} 
+                        className="flex items-center justify-between p-4 rounded-xl transition-all duration-200 hover:scale-[1.02]"
+                        style={{
+                          background: 'rgba(79, 70, 229, 0.1)',
+                          border: '2px solid rgba(79, 70, 229, 0.2)'
+                        }}
+                      >
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div 
+                            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-xl"
+                            style={{
+                              background: index === 0 ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' :
+                                         index === 1 ? 'linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%)' :
+                                         index === 2 ? 'linear-gradient(135deg, #CD7F32 0%, #B8860B 100%)' :
+                                         'rgba(79, 70, 229, 0.3)'
+                            }}
+                          >
+                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '📝'}
+                          </div>
+                          <span className="text-white font-medium truncate">{quiz.title}</span>
+                        </div>
+                        <span 
+                          className="px-4 py-2 rounded-lg font-bold text-sm flex-shrink-0"
+                          style={{
+                            backgroundColor: score >= 85 ? 'rgba(52, 211, 153, 0.2)' : 'rgba(139, 92, 246, 0.2)',
+                            color: score >= 85 ? '#34D399' : '#A78BFA'
+                          }}
+                        >
+                          {score}%
+                        </span>
                       </div>
-                      <span className="text-accent font-semibold">{Math.floor(Math.random() * 100)}%</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
-              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                <h3 className="text-lg font-bold text-white mb-4">Participation Trends</h3>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-400">This Week</span>
-                      <span className="text-white font-semibold">87%</span>
-                    </div>
-                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-accent to-green-600 rounded-full" style={{ width: '87%' }}></div>
-                    </div>
+
+              {/* Participation Trends */}
+              <div 
+                className="rounded-3xl p-8 border-2"
+                style={{
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  borderColor: 'rgba(52, 211, 153, 0.2)',
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+                }}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                      boxShadow: '0 4px 12px rgba(52, 211, 153, 0.4)'
+                    }}
+                  >
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
                   </div>
                   <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-400">Last Week</span>
-                      <span className="text-white font-semibold">72%</span>
-                    </div>
-                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-secondary to-purple-600 rounded-full" style={{ width: '72%' }}></div>
-                    </div>
+                    <h3 className="text-xl font-bold text-white">Engagement Trends</h3>
+                    <p className="text-sm text-gray-400">Participation over time</p>
                   </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-400">Last Month</span>
-                      <span className="text-white font-semibold">65%</span>
+                </div>
+                
+                <div className="space-y-6">
+                  {[
+                    { label: 'This Week', value: 87, color: '#34D399' },
+                    { label: 'Last Week', value: 72, color: '#8B5CF6' },
+                    { label: 'Last Month', value: 65, color: '#4F46E5' }
+                  ].map((item, index) => (
+                    <div key={index}>
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-gray-300 font-medium">{item.label}</span>
+                        <span className="text-white font-bold text-lg">{item.value}%</span>
+                      </div>
+                      <div 
+                        className="h-3 rounded-full overflow-hidden"
+                        style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)' }}
+                      >
+                        <div 
+                          className="h-full rounded-full transition-all duration-1000 ease-out"
+                          style={{ 
+                            width: `${item.value}%`,
+                            background: `linear-gradient(90deg, ${item.color} 0%, ${item.color}CC 100%)`,
+                            boxShadow: `0 0 10px ${item.color}80`
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-primary to-blue-600 rounded-full" style={{ width: '65%' }}></div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -2303,25 +2456,264 @@ const Dashboard: React.FC = () => {
         )}
 
         {activeView === 'settings' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Settings</h2>
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <h3 className="text-lg font-bold text-white mb-4">Profile Settings</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Username</label>
-                  <input type="text" value={user?.username} disabled className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white" />
+          <div className="space-y-8">
+            {/* Page Header */}
+            <div>
+              <h2 className="text-3xl font-bold text-white mb-2">Settings</h2>
+              <p className="text-gray-400">Manage your account preferences and profile information</p>
+            </div>
+
+            {/* Profile Card */}
+            <div 
+              className="rounded-3xl p-8 border-2"
+              style={{
+                background: 'rgba(15, 23, 42, 0.6)',
+                borderColor: 'rgba(79, 70, 229, 0.2)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+              }}
+            >
+              <div className="flex items-center gap-6 mb-8">
+                <div 
+                  className="w-24 h-24 rounded-2xl flex items-center justify-center text-white font-bold text-4xl"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                    boxShadow: '0 8px 24px rgba(79, 70, 229, 0.4)'
+                  }}
+                >
+                  {user?.username?.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Email</label>
-                  <input type="email" value={user?.email} disabled className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white" />
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-white mb-1">{user?.username}</h3>
+                  <p className="text-gray-400 mb-3">{user?.email}</p>
+                  <span 
+                    className="inline-block px-4 py-2 rounded-xl font-semibold text-sm capitalize"
+                    style={{
+                      background: user?.role === 'instructor' 
+                        ? 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)'
+                        : 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
+                      color: 'white',
+                      boxShadow: user?.role === 'instructor'
+                        ? '0 4px 12px rgba(139, 92, 246, 0.3)'
+                        : '0 4px 12px rgba(79, 70, 229, 0.3)'
+                    }}
+                  >
+                    {user?.role}
+                  </span>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Role</label>
-                  <input type="text" value={user?.role} disabled className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white capitalize" />
+                  <label className="block text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Username
+                  </label>
+                  {editingUsername ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newUsername}
+                        onChange={(e) => setNewUsername(e.target.value)}
+                        className="flex-1 px-4 py-3 rounded-xl text-white focus:outline-none transition-all duration-200"
+                        style={{
+                          backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                          border: '2px solid rgba(79, 70, 229, 0.4)'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = '#4F46E5';
+                          e.target.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.2)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'rgba(79, 70, 229, 0.4)';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                        placeholder="Enter new username"
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!newUsername.trim()) return;
+                          setSavingUsername(true);
+                          // Simulate API call - replace with actual API call
+                          await new Promise(resolve => setTimeout(resolve, 1000));
+                          // Update user context here
+                          setSavingUsername(false);
+                          setEditingUsername(false);
+                        }}
+                        disabled={savingUsername || !newUsername.trim()}
+                        className="px-4 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                          background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                          boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+                        }}
+                      >
+                        {savingUsername ? (
+                          <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingUsername(false);
+                          setNewUsername('');
+                        }}
+                        className="px-4 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                        style={{
+                          backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                          border: '2px solid rgba(239, 68, 68, 0.3)',
+                          color: '#F87171'
+                        }}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <div 
+                        className="flex-1 px-4 py-3 rounded-xl"
+                        style={{
+                          backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                          border: '2px solid rgba(79, 70, 229, 0.3)'
+                        }}
+                      >
+                        <p className="text-white font-medium">{user?.username}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setEditingUsername(true);
+                          setNewUsername(user?.username || '');
+                        }}
+                        className="px-4 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                        style={{
+                          backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                          border: '2px solid rgba(79, 70, 229, 0.3)',
+                          color: '#A5B4FC'
+                        }}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Email Address
+                  </label>
+                  <div 
+                    className="px-4 py-3 rounded-xl"
+                    style={{
+                      backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                      border: '2px solid rgba(79, 70, 229, 0.3)'
+                    }}
+                  >
+                    <p className="text-white font-medium">{user?.email}</p>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Account Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div 
+                className="rounded-2xl p-6 border-2 transition-all duration-200 hover:scale-[1.02]"
+                style={{
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  borderColor: 'rgba(79, 70, 229, 0.3)',
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: '0 4px 16px rgba(79, 70, 229, 0.2)'
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-14 h-14 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)'
+                    }}
+                  >
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-white">{stats.totalQuizzes}</p>
+                    <p className="text-sm text-gray-400 font-medium">Total Quizzes</p>
+                  </div>
+                </div>
+              </div>
+
+              <div 
+                className="rounded-2xl p-6 border-2 transition-all duration-200 hover:scale-[1.02]"
+                style={{
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  borderColor: 'rgba(139, 92, 246, 0.3)',
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: '0 4px 16px rgba(139, 92, 246, 0.2)'
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-14 h-14 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)'
+                    }}
+                  >
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-white">{stats.totalPlays}</p>
+                    <p className="text-sm text-gray-400 font-medium">Total Plays</p>
+                  </div>
+                </div>
+              </div>
+
+              <div 
+                className="rounded-2xl p-6 border-2 transition-all duration-200 hover:scale-[1.02]"
+                style={{
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  borderColor: 'rgba(52, 211, 153, 0.3)',
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: '0 4px 16px rgba(52, 211, 153, 0.2)'
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-14 h-14 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)'
+                    }}
+                  >
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-white">{stats.averageScore}%</p>
+                    <p className="text-sm text-gray-400 font-medium">Avg Score</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
           </div>
         )}
 
