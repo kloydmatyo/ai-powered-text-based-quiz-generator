@@ -2273,10 +2273,12 @@ const Dashboard: React.FC = () => {
             <div className="flex gap-3">
               {selectedClass.quizzes && selectedClass.quizzes.length > 0 && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setSelectedClassFilter(selectedClass._id);
                     setActiveView('quizzes');
                     setSelectedClass(null);
+                    // Fetch quizzes to ensure they're loaded
+                    await fetchQuizzes();
                   }}
                   className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
                   style={{
