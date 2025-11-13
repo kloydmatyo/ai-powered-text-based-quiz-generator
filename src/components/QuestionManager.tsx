@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Modal from './Modal';
 
 interface Question {
   _id: string;
@@ -33,6 +34,31 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
   const [regeneratingQuestionId, setRegeneratingQuestionId] = useState<string | null>(null);
   const [showRegenerateModal, setShowRegenerateModal] = useState(false);
   const [questionToRegenerate, setQuestionToRegenerate] = useState<string | null>(null);
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info' | 'confirm' | 'danger';
+    onConfirm?: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showModal = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type
+    });
+  };
+
+  const closeModal = () => {
+    setModalConfig(prev => ({ ...prev, isOpen: false }));
+  };
   const [newQuestion, setNewQuestion] = useState({
     questionText: '',
     questionType: 'multiple-choice' as 'multiple-choice' | 'true-false' | 'fill-in-blank',
@@ -106,30 +132,40 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
 
   const updateQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/quizzes/${quiz._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(quizData),
-      });
+    
+    // Show confirmation modal
+    setModalConfig({
+      isOpen: true,
+      title: 'Save Quiz Changes',
+      message: 'Are you sure you want to save these changes to the quiz details?',
+      type: 'confirm',
+      onConfirm: async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`/api/quizzes/${quiz._id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(quizData),
+          });
 
-      if (response.ok) {
-        const data = await response.json();
-        quiz.title = data.quiz.title;
-        quiz.description = data.quiz.description;
-        setEditingQuiz(false);
-        alert('Quiz updated successfully!');
-      } else {
-        alert('Failed to update quiz');
+          if (response.ok) {
+            const data = await response.json();
+            quiz.title = data.quiz.title;
+            quiz.description = data.quiz.description;
+            setEditingQuiz(false);
+            showModal('Success', 'Quiz updated successfully!', 'success');
+          } else {
+            showModal('Error', 'Failed to update quiz', 'error');
+          }
+        } catch (error) {
+          console.error('Error updating quiz:', error);
+          showModal('Error', 'Error updating quiz', 'error');
+        }
       }
-    } catch (error) {
-      console.error('Error updating quiz:', error);
-      alert('Error updating quiz');
-    }
+    });
   };
 
   const updateQuestion = async (e: React.FormEvent) => {
@@ -163,23 +199,34 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
   };
 
   const deleteQuestion = async (questionId: string) => {
-    if (!confirm('Are you sure you want to delete this question?')) return;
+    // Show danger confirmation modal
+    setModalConfig({
+      isOpen: true,
+      title: 'Delete Question',
+      message: 'Are you sure you want to delete this question? This action cannot be undone.',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`/api/questions/${questionId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/questions/${questionId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        setQuestions(questions.filter(q => q._id !== questionId));
+          if (response.ok) {
+            setQuestions(questions.filter(q => q._id !== questionId));
+            showModal('Success', 'Question deleted successfully!', 'success');
+          } else {
+            showModal('Error', 'Failed to delete question', 'error');
+          }
+        } catch (error) {
+          console.error('Error deleting question:', error);
+          showModal('Error', 'Error deleting question', 'error');
+        }
       }
-    } catch (error) {
-      console.error('Error deleting question:', error);
-    }
+    });
   };
 
   const openRegenerateModal = (questionId: string) => {
@@ -397,14 +444,14 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
       if (updateResponse.ok) {
         const data = await updateResponse.json();
         setQuestions(questions.map(q => q._id === questionToRegenerate ? data.question : q));
-        alert('✅ Question regenerated successfully!');
+        showModal('Success', 'Question regenerated successfully!', 'success');
       } else {
         const errorData = await updateResponse.json();
         throw new Error(errorData.error || 'Failed to update question');
       }
     } catch (error: any) {
       console.error('Error regenerating question:', error);
-      alert(`❌ Failed to regenerate question: ${error.message}\n\nTip: Try adding a description to your quiz for better AI generation.`);
+      showModal('Error', `Failed to regenerate question: ${error.message}\n\nTip: Try adding a description to your quiz for better AI generation.`, 'error');
     } finally {
       setRegeneratingQuestionId(null);
       setQuestionToRegenerate(null);
@@ -631,6 +678,7 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
     }
     
     doc.save(`${quiz.title}.pdf`);
+    showModal('Success', `Quiz exported successfully! File: ${quiz.title}.pdf`, 'success');
   };
 
   const exportToDOCX = async () => {
@@ -772,9 +820,11 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
       // Generate and save
       const blob = await Packer.toBlob(doc);
       saveAs(blob, `${quiz.title}.docx`);
+      
+      showModal('Success', `Quiz exported successfully! File: ${quiz.title}_quiz.docx`, 'success');
     } catch (error) {
       console.error('Error exporting to DOCX:', error);
-      alert('Failed to export to DOCX. Please try again.');
+      showModal('Error', 'Failed to export to DOCX. Please try again.', 'error');
     }
   };
 
@@ -954,7 +1004,11 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                 <div className="flex space-x-3">
                   <button
                     type="submit"
-                    className="bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-md text-sm font-medium"
+                    className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:scale-105"
+                    style={{
+                      background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                      boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+                    }}
                   >
                     💾 Save Changes
                   </button>
@@ -1121,7 +1175,11 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                 <div className="flex space-x-3">
                   <button
                     type="submit"
-                    className="bg-accent hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium"
+                    className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:scale-105"
+                    style={{
+                      background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                      boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+                    }}
                   >
                     {editingQuestion ? 'Update Question' : 'Add Question'}
                   </button>
@@ -1399,7 +1457,11 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
               </button>
               <button
                 onClick={confirmRegenerateQuestion}
-                className="flex-1 px-6 py-3 rounded-xl font-semibold text-white bg-accent hover:bg-green-600 transition-colors duration-200 flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
+                style={{
+                  background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                  boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+                }}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -1410,6 +1472,16 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
           </div>
         </div>
       )}
+
+      {/* Global Modal */}
+      <Modal
+        isOpen={modalConfig.isOpen}
+        onClose={closeModal}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onConfirm={modalConfig.onConfirm}
+      />
     </div>
   );
 };

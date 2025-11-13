@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Modal from './Modal';
 
 interface Question {
   _id: string;
@@ -34,6 +35,30 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
   const [previousSubmission, setPreviousSubmission] = useState<any>(null);
   const [timeRemaining, setTimeRemaining] = useState(1800); // 30 minutes default
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showModal = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type
+    });
+  };
+
+  const closeModal = () => {
+    setModalConfig(prev => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     checkPreviousSubmission();
@@ -193,7 +218,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
     });
 
     if (unansweredQuestions.length > 0) {
-      alert('Please answer all questions before submitting.');
+      showModal('Incomplete Quiz', 'Please answer all questions before submitting.', 'warning');
       return;
     }
 
@@ -233,11 +258,11 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
         setQuestions(updatedQuestions);
         setShowResults(true);
       } else {
-        alert('Failed to submit quiz. Please try again.');
+        showModal('Error', 'Failed to submit quiz. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Error submitting quiz:', error);
-      alert('An error occurred while submitting the quiz.');
+      showModal('Error', 'An error occurred while submitting the quiz.', 'error');
     }
   };
 
@@ -968,6 +993,15 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
           </div>
         </div>
       )}
+
+      {/* Global Modal */}
+      <Modal
+        isOpen={modalConfig.isOpen}
+        onClose={closeModal}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+      />
     </div>
   );
 };

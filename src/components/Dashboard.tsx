@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import QuestionManager from './QuestionManager';
 import QuizTaker from './QuizTaker';
+import Modal from './Modal';
 
 interface Quiz {
   _id: string;
@@ -63,6 +64,18 @@ const Dashboard: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info' | 'confirm' | 'danger';
+    onConfirm?: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
 
   useEffect(() => {
     fetchQuizzes();
@@ -143,10 +156,45 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const showModal = (title: string, message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type
+    });
+  };
+
+  const showConfirmModal = (title: string, message: string, onConfirm: () => void) => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type: 'confirm',
+      onConfirm
+    });
+  };
+
+  const showDangerModal = (title: string, message: string, onConfirm: () => void) => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type: 'danger',
+      onConfirm
+    });
+  };
+
+  const closeModal = () => {
+    setModalConfig(prev => ({ ...prev, isOpen: false }));
+  };
+
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to log out?')) {
-      logout();
-    }
+    showConfirmModal(
+      'Confirm Logout',
+      'Are you sure you want to log out?',
+      () => logout()
+    );
   };
 
   const fetchQuizzes = async () => {
@@ -204,7 +252,7 @@ const Dashboard: React.FC = () => {
       });
       
       if (!response.ok) {
-        alert('Failed to fetch analytics data');
+        showModal('Error', 'Failed to fetch analytics data', 'error');
         return;
       }
       
@@ -274,34 +322,44 @@ const Dashboard: React.FC = () => {
       document.body.removeChild(link);
       
       console.log('✅ Analytics report exported successfully');
+      showModal('Success', `Analytics report exported successfully! File: analytics_report_${new Date().toISOString().split('T')[0]}.csv`, 'success');
     } catch (error) {
       console.error('Error exporting analytics:', error);
-      alert('Failed to export analytics report');
+      showModal('Error', 'Failed to export analytics report', 'error');
     }
   };
 
-  const deleteQuiz = async (quizId: string) => {
-    if (!confirm('Are you sure you want to delete this quiz?')) return;
+  const deleteQuiz = (quizId: string) => {
+    const quizToDelete = quizzes.find(q => q._id === quizId);
+    const quizTitle = quizToDelete?.title || 'this quiz';
+    
+    showDangerModal(
+      'Delete Quiz',
+      `Are you sure you want to delete "${quizTitle}"? This action cannot be undone.`,
+      async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`/api/quizzes/${quizId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/quizzes/${quizId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        setQuizzes(quizzes.filter(quiz => quiz._id !== quizId));
-      } else {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Delete quiz failed:', response.status, errorData);
-        alert(`Failed to delete quiz: ${errorData.error || 'Unknown error'}`);
+          if (response.ok) {
+            setQuizzes(quizzes.filter(quiz => quiz._id !== quizId));
+            showModal('Success', `Quiz "${quizTitle}" deleted successfully`, 'success');
+          } else {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.error('Delete quiz failed:', response.status, errorData);
+            showModal('Error', `Failed to delete quiz: ${errorData.error || 'Unknown error'}`, 'error');
+          }
+        } catch (error) {
+          console.error('Error deleting quiz:', error);
+          showModal('Error', 'An error occurred while deleting the quiz', 'error');
+        }
       }
-    } catch (error) {
-      console.error('Error deleting quiz:', error);
-    }
+    );
   };
 
   const AIQuizCreationModal = () => {
@@ -958,13 +1016,19 @@ const Dashboard: React.FC = () => {
         // Refresh quiz list
         await fetchQuizzes();
         
+        // Show success modal
+        const classInfo = aiQuizData?.classId 
+          ? ` and assigned to ${classes.find(c => c._id === aiQuizData.classId)?.name || 'class'}`
+          : '';
+        showModal('Success', `Quiz "${editableQuiz.title}" saved successfully${classInfo}!`, 'success');
+        
         // Close preview
         setShowAIPreview(false);
         setAiQuizData(null);
 
       } catch (error) {
         console.error('Error saving quiz:', error);
-        alert('Failed to save quiz. Please try again.');
+        showModal('Error', 'Failed to save quiz. Please try again.', 'error');
       } finally {
         setSaving(false);
       }
@@ -1343,7 +1407,7 @@ const Dashboard: React.FC = () => {
 
     const handleCreateClass = async () => {
       if (!className.trim()) {
-        alert('Please enter a class name');
+        showModal('Validation Error', 'Please enter a class name', 'warning');
         return;
       }
 
@@ -1369,14 +1433,14 @@ const Dashboard: React.FC = () => {
           setClassName('');
           setClassDescription('');
           // Show success with class code
-          alert(`Class created successfully! Class Code: ${data.class.classCode}`);
+          showModal('Success', `Class created successfully! Class Code: ${data.class.classCode}`, 'success');
         } else {
           const errorData = await response.json();
-          alert(errorData.error || 'Failed to create class');
+          showModal('Error', errorData.error || 'Failed to create class', 'error');
         }
       } catch (error) {
         console.error('Error creating class:', error);
-        alert('An error occurred while creating the class');
+        showModal('Error', 'An error occurred while creating the class', 'error');
       } finally {
         setCreating(false);
       }
@@ -1569,7 +1633,7 @@ const Dashboard: React.FC = () => {
 
     const handleJoinClass = async () => {
       if (!classCode.trim()) {
-        alert('Please enter a class code');
+        showModal('Validation Error', 'Please enter a class code', 'warning');
         return;
       }
 
@@ -1591,13 +1655,13 @@ const Dashboard: React.FC = () => {
           await fetchClasses();
           setShowJoinClassModal(false);
           setClassCode('');
-          alert(`Successfully joined ${data.class.name}!`);
+          showModal('Success', `Successfully joined ${data.class.name}!`, 'success');
         } else {
-          alert(data.error || 'Failed to join class');
+          showModal('Error', data.error || 'Failed to join class', 'error');
         }
       } catch (error) {
         console.error('Error joining class:', error);
-        alert('An error occurred while joining the class');
+        showModal('Error', 'An error occurred while joining the class', 'error');
       } finally {
         setJoining(false);
       }
@@ -1830,7 +1894,7 @@ const Dashboard: React.FC = () => {
                     }}
                     onClick={() => {
                       navigator.clipboard.writeText(selectedClass.classCode);
-                      alert('Class code copied to clipboard!');
+                      showModal('Success', 'Class code copied to clipboard!', 'success');
                     }}
                     title="Click to copy"
                   >
@@ -2052,7 +2116,7 @@ const Dashboard: React.FC = () => {
     // Export to CSV function
     const exportToCSV = () => {
       if (submissions.length === 0) {
-        alert('No submissions to export');
+        showModal('No Data', 'No submissions to export', 'warning');
         return;
       }
 
@@ -2095,6 +2159,8 @@ const Dashboard: React.FC = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      showModal('Success', `Submissions exported successfully! File: ${quiz.title}_submissions_${new Date().toISOString().split('T')[0]}.csv`, 'success');
     };
 
     return (
@@ -3787,7 +3853,7 @@ const Dashboard: React.FC = () => {
                             }}
                             onClick={() => {
                               navigator.clipboard.writeText(classItem.classCode);
-                              alert('Class code copied to clipboard!');
+                              showModal('Success', 'Class code copied to clipboard!', 'success');
                             }}
                             title="Click to copy"
                           >
@@ -4209,16 +4275,16 @@ const Dashboard: React.FC = () => {
                                 window.location.reload(); // Reload to update all user references
                               }
                               
-                              alert('Username updated successfully!');
+                              showModal('Success', 'Username updated successfully!', 'success');
                               setEditingUsername(false);
                               setNewUsername('');
                             } else {
                               const errorData = await response.json();
-                              alert(errorData.error || 'Failed to update username');
+                              showModal('Error', errorData.error || 'Failed to update username', 'error');
                             }
                           } catch (error) {
                             console.error('Error updating username:', error);
-                            alert('An error occurred while updating username');
+                            showModal('Error', 'An error occurred while updating username', 'error');
                           } finally {
                             setSavingUsername(false);
                           }
@@ -4410,6 +4476,16 @@ const Dashboard: React.FC = () => {
       {showCreateClassModal && <CreateClassModal />}
       {showJoinClassModal && <JoinClassModal />}
       {selectedClass && <ClassDetailsModal />}
+
+      {/* Global Modal */}
+      <Modal
+        isOpen={modalConfig.isOpen}
+        onClose={closeModal}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        onConfirm={modalConfig.onConfirm}
+      />
     </div>
   );
 };
