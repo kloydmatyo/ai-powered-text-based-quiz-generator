@@ -19,7 +19,7 @@ export async function GET(
     // Try to find all quizzes first
     const allQuizzes = await Quiz.find({});
     console.log('Debug - Total quizzes in DB:', allQuizzes.length);
-    allQuizzes.forEach(q => console.log('Debug - Quiz in DB:', q._id.toString(), q.title));
+    allQuizzes.forEach((q: any) => console.log('Debug - Quiz in DB:', q._id.toString(), q.title));
     
     const quiz = await Quiz.findById(id);
     console.log('Debug - Quiz found:', !!quiz);
@@ -36,7 +36,7 @@ export async function GET(
       id: id,
       found: !!quiz,
       totalQuizzes: allQuizzes.length,
-      allQuizIds: allQuizzes.map(q => q._id.toString()),
+      allQuizIds: allQuizzes.map((q: any) => q._id.toString()),
       quiz: quiz ? {
         _id: quiz._id,
         title: quiz.title,
