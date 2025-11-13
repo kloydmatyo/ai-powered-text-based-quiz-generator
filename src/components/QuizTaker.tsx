@@ -28,15 +28,38 @@ interface QuizTakerProps {
 const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(() => {
+    // Try to restore current question index from localStorage
+    const indexKey = `quiz_index_${quiz._id}`;
+    const savedIndex = localStorage.getItem(indexKey);
+    if (savedIndex) {
+      const index = parseInt(savedIndex, 10);
+      console.log('📍 Restored question index:', index);
+      return index;
+    }
+    return 0;
+  });
   const [userAnswers, setUserAnswers] = useState<{ [key: string]: number | string }>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState<number | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [alreadyCompleted, setAlreadyCompleted] = useState(false);
   const [previousSubmission, setPreviousSubmission] = useState<any>(null);
-  const [timeRemaining, setTimeRemaining] = useState((quiz.timeLimit || 30) * 60); // Convert minutes to seconds
+  const [timeRemaining, setTimeRemaining] = useState(() => {
+    // Try to restore timer from localStorage
+    const timerKey = `quiz_timer_${quiz._id}`;
+    const savedTimer = localStorage.getItem(timerKey);
+    if (savedTimer) {
+      const { timeRemaining: savedTime, timestamp } = JSON.parse(savedTimer);
+      const elapsed = Math.floor((Date.now() - timestamp) / 1000);
+      const remaining = Math.max(0, savedTime - elapsed);
+      console.log('⏱️ Restored timer:', remaining, 'seconds remaining');
+      return remaining;
+    }
+    return (quiz.timeLimit || 30) * 60; // Convert minutes to seconds
+  });
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+  const [showConfirmNext, setShowConfirmNext] = useState(false);
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean;
     title: string;
@@ -85,21 +108,49 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
     }
   }, [userAnswers, submitted, alreadyCompleted, quiz._id]);
 
-  // Timer countdown
+  useEffect(() => {
+    // Auto-save current question index to localStorage
+    if (!submitted && !alreadyCompleted) {
+      const indexKey = `quiz_index_${quiz._id}`;
+      localStorage.setItem(indexKey, currentQuestionIndex.toString());
+    }
+  }, [currentQuestionIndex, submitted, alreadyCompleted, quiz._id]);
+
+  // Timer countdown with persistence
   useEffect(() => {
     if (!submitted && !alreadyCompleted && timeRemaining > 0) {
       const timer = setInterval(() => {
         setTimeRemaining(prev => {
-          if (prev <= 1) {
+          const newTime = prev - 1;
+          
+          // Save timer to localStorage
+          const timerKey = `quiz_timer_${quiz._id}`;
+          localStorage.setItem(timerKey, JSON.stringify({
+            timeRemaining: newTime,
+            timestamp: Date.now()
+          }));
+          
+          if (newTime <= 0) {
             handleSubmit();
             return 0;
           }
-          return prev - 1;
+          return newTime;
         });
       }, 1000);
       return () => clearInterval(timer);
     }
   }, [submitted, alreadyCompleted, timeRemaining]);
+
+  // Clear timer and index from localStorage when quiz is submitted
+  useEffect(() => {
+    if (submitted || alreadyCompleted) {
+      const timerKey = `quiz_timer_${quiz._id}`;
+      const indexKey = `quiz_index_${quiz._id}`;
+      localStorage.removeItem(timerKey);
+      localStorage.removeItem(indexKey);
+      console.log('🗑️ Cleared saved timer and question index');
+    }
+  }, [submitted, alreadyCompleted, quiz._id]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -213,21 +264,40 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
     }
   };
 
-  const handleAnswerSelect = (questionId: string, answer: number | string) => {
-    if (!submitted) {
-      setUserAnswers({
-        ...userAnswers,
-        [questionId]: answer
-      });
+  const handleNextQuestion = () => {
+    const currentAnswer = userAnswers[currentQuestion._id];
+    const hasAnswer = currentAnswer !== undefined && 
+                      currentAnswer !== null && 
+                      !(typeof currentAnswer === 'string' && currentAnswer.trim() === '');
+    
+    if (!hasAnswer) {
+      setShowConfirmNext(true);
+    } else {
+      setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1));
+    }
+  };
+
+  const getUnansweredQuestions = () => {
+    return questions.filter(q => {
+      const answer = userAnswers[q._id];
+      return answer === undefined || answer === null || (typeof answer === 'string' && answer.trim() === '');
+    });
+  };
+
+  const handleSubmitClick = () => {
+    const unansweredQuestions = getUnansweredQuestions();
+    
+    if (unansweredQuestions.length > 0) {
+      // Show confirmation modal with skipped questions info
+      setShowConfirmSubmit(true);
+    } else {
+      // All questions answered, show regular confirmation
+      setShowConfirmSubmit(true);
     }
   };
 
   const handleSubmit = async () => {
-    // Check if all questions are answered (including non-empty strings for fill-in-blank)
-    const unansweredQuestions = questions.filter(q => {
-      const answer = userAnswers[q._id];
-      return answer === undefined || answer === null || (typeof answer === 'string' && answer.trim() === '');
-    });
+    const unansweredQuestions = getUnansweredQuestions();
 
     if (unansweredQuestions.length > 0) {
       showModal('Incomplete Quiz', 'Please answer all questions before submitting.', 'warning');
@@ -254,10 +324,14 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
         setSubmitted(true);
         setAlreadyCompleted(true);
         
-        // Clear saved progress
+        // Clear saved progress, timer, and index
         const progressKey = `quiz_progress_${quiz._id}`;
+        const timerKey = `quiz_timer_${quiz._id}`;
+        const indexKey = `quiz_index_${quiz._id}`;
         localStorage.removeItem(progressKey);
-        console.log('🗑️ Cleared saved progress');
+        localStorage.removeItem(timerKey);
+        localStorage.removeItem(indexKey);
+        console.log('🗑️ Cleared saved progress, timer, and index');
         
         // Update questions with correct answers for review
         const updatedQuestions = questions.map((q) => {
@@ -919,7 +993,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
                 
                 {currentQuestionIndex < questions.length - 1 ? (
                   <button
-                    onClick={() => setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1))}
+                    onClick={handleNextQuestion}
                     disabled={submitted || alreadyCompleted}
                     className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
@@ -934,7 +1008,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
                   </button>
                 ) : (
                   <button
-                    onClick={() => setShowConfirmSubmit(true)}
+                    onClick={handleSubmitClick}
                     disabled={submitted || alreadyCompleted}
                     className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
@@ -954,38 +1028,38 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
         )}
       </div>
 
-      {/* Confirm Submit Modal */}
-      {showConfirmSubmit && (
+      {/* Confirm Next Modal (Unanswered Question) */}
+      {showConfirmNext && (
         <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div 
             className="rounded-3xl p-8 max-w-md w-full border-2 shadow-2xl"
             style={{
               background: 'rgba(15, 23, 42, 0.95)',
-              borderColor: 'rgba(52, 211, 153, 0.4)',
-              boxShadow: '0 25px 50px rgba(52, 211, 153, 0.2)'
+              borderColor: 'rgba(251, 191, 36, 0.4)',
+              boxShadow: '0 25px 50px rgba(251, 191, 36, 0.2)'
             }}
           >
             <div className="flex items-center gap-4 mb-6">
               <div 
                 className="w-14 h-14 rounded-2xl flex items-center justify-center"
                 style={{
-                  background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)'
+                  background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)'
                 }}
               >
                 <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-white">Submit Quiz?</h3>
+              <h3 className="text-2xl font-bold text-white">Question Not Answered</h3>
             </div>
             
             <p className="text-gray-300 mb-6 leading-relaxed">
-              Are you sure you want to submit your quiz? You won't be able to change your answers after submission.
+              You haven't answered this question yet. Are you sure you want to skip it and move to the next question?
             </p>
 
             <div className="flex gap-3">
               <button
-                onClick={() => setShowConfirmSubmit(false)}
+                onClick={() => setShowConfirmNext(false)}
                 className="flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
                 style={{
                   backgroundColor: 'rgba(139, 92, 246, 0.2)',
@@ -993,25 +1067,131 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
                   color: '#A78BFA'
                 }}
               >
-                Cancel
+                Stay Here
               </button>
               <button
                 onClick={() => {
-                  setShowConfirmSubmit(false);
-                  handleSubmit();
+                  setShowConfirmNext(false);
+                  setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1));
                 }}
                 className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105"
                 style={{
-                  background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
-                  boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+                  background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                  boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)'
                 }}
               >
-                Submit
+                Skip Question
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Confirm Submit Modal */}
+      {showConfirmSubmit && (() => {
+        const unansweredQuestions = getUnansweredQuestions();
+        const hasSkipped = unansweredQuestions.length > 0;
+        
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div 
+              className="rounded-3xl p-8 max-w-md w-full border-2 shadow-2xl"
+              style={{
+                background: 'rgba(15, 23, 42, 0.95)',
+                borderColor: hasSkipped ? 'rgba(251, 191, 36, 0.4)' : 'rgba(52, 211, 153, 0.4)',
+                boxShadow: hasSkipped ? '0 25px 50px rgba(251, 191, 36, 0.2)' : '0 25px 50px rgba(52, 211, 153, 0.2)'
+              }}
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div 
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                  style={{
+                    background: hasSkipped 
+                      ? 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)'
+                      : 'linear-gradient(135deg, #34D399 0%, #10B981 100%)'
+                  }}
+                >
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {hasSkipped ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    )}
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white">
+                  {hasSkipped ? 'Incomplete Quiz!' : 'Submit Quiz?'}
+                </h3>
+              </div>
+              
+              {hasSkipped ? (
+                <div className="mb-6">
+                  <div 
+                    className="p-4 rounded-xl mb-4 border-2"
+                    style={{
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      borderColor: 'rgba(239, 68, 68, 0.3)'
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-red-300 font-bold">
+                        {unansweredQuestions.length} {unansweredQuestions.length === 1 ? 'Question' : 'Questions'} Unanswered
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-400">
+                      Question {unansweredQuestions.map((q, idx) => 
+                        questions.findIndex(qu => qu._id === q._id) + 1
+                      ).join(', ')}
+                    </p>
+                  </div>
+                  <p className="text-gray-300 leading-relaxed">
+                    You have skipped {unansweredQuestions.length} {unansweredQuestions.length === 1 ? 'question' : 'questions'}. 
+                    Unanswered questions will be marked as incorrect. Do you want to submit anyway?
+                  </p>
+                </div>
+              ) : (
+                <p className="text-gray-300 mb-6 leading-relaxed">
+                  Are you sure you want to submit your quiz? You won't be able to change your answers after submission.
+                </p>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirmSubmit(false)}
+                  className="flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                  style={{
+                    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                    border: '2px solid rgba(139, 92, 246, 0.3)',
+                    color: '#A78BFA'
+                  }}
+                >
+                  {hasSkipped ? 'Review Quiz' : 'Cancel'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowConfirmSubmit(false);
+                    handleSubmit();
+                  }}
+                  className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105"
+                  style={{
+                    background: hasSkipped 
+                      ? 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)'
+                      : 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                    boxShadow: hasSkipped 
+                      ? '0 4px 12px rgba(251, 191, 36, 0.3)'
+                      : '0 4px 12px rgba(52, 211, 153, 0.3)'
+                  }}
+                >
+                  Submit Anyway
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Global Modal */}
       <Modal
