@@ -280,177 +280,393 @@ const Dashboard: React.FC = () => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Create AI-Generated Quiz</h3>
-            <button
-              onClick={() => {
-                setShowAICreateModal(false);
-                setFile(null);
-                setText('');
-                setError('');
-                setStep('upload');
-              }}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 md:p-8">
+        <div 
+          className="rounded-3xl w-full max-w-4xl border-2 shadow-2xl overflow-hidden"
+          style={{
+            background: 'rgba(15, 23, 42, 0.98)',
+            borderColor: 'rgba(79, 70, 229, 0.4)',
+            boxShadow: '0 25px 50px rgba(79, 70, 229, 0.3)',
+            maxHeight: '90vh'
+          }}
+        >
+          {/* Header */}
+          <div 
+            className="p-6 border-b"
+            style={{
+              background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
+              borderColor: 'rgba(79, 70, 229, 0.3)'
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)'
+                  }}
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">AI Quiz Generator</h3>
+                  <p className="text-sm text-gray-400">Create quizzes from your documents instantly</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAICreateModal(false);
+                  setFile(null);
+                  setText('');
+                  setError('');
+                  setStep('upload');
+                }}
+                className="p-2 rounded-xl transition-all duration-200 hover:scale-110"
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                  border: '2px solid rgba(239, 68, 68, 0.3)',
+                  color: '#F87171'
+                }}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {step === 'upload' && (
-            <div className="space-y-4">
+            <div className="p-6 md:p-8 space-y-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 120px)' }}>
+              {/* File Upload Section */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Upload Text File
+                <label className="block text-sm font-semibold text-white mb-3">
+                  📄 Upload Document
                 </label>
-                <input
-                  type="file"
-                  accept=".txt,.pdf,.docx"
-                  onChange={handleFileUpload}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Supported: .txt, .pdf, .docx files (max 10MB)
-                </p>
+                <div 
+                  className="relative border-2 border-dashed rounded-2xl p-6 md:p-8 text-center transition-all duration-200 cursor-pointer hover:scale-[1.02]"
+                  style={{
+                    borderColor: file ? 'rgba(52, 211, 153, 0.4)' : 'rgba(79, 70, 229, 0.4)',
+                    backgroundColor: file ? 'rgba(52, 211, 153, 0.1)' : 'rgba(79, 70, 229, 0.1)'
+                  }}
+                >
+                  <input
+                    type="file"
+                    accept=".txt,.pdf,.docx"
+                    onChange={handleFileUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  {!file ? (
+                    <div>
+                      <div 
+                        className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                        style={{
+                          background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)'
+                        }}
+                      >
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                      </div>
+                      <p className="text-white font-semibold mb-2">Click to upload or drag and drop</p>
+                      <p className="text-sm text-gray-400">TXT, PDF, DOCX (max 10MB)</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <div 
+                        className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                        style={{
+                          background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)'
+                        }}
+                      >
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-white font-semibold mb-2">{file.name}</p>
+                      <p className="text-sm text-emerald-400">File uploaded successfully!</p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {text && (
                 <>
+                  {/* Content Preview */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Preview Content
+                    <label className="block text-sm font-semibold text-white mb-3">
+                      📖 Content Preview
                     </label>
-                    <textarea
-                      value={text.substring(0, 200) + (text.length > 200 ? '...' : '')}
-                      readOnly
-                      className="w-full h-24 p-2 border border-gray-300 rounded text-sm bg-gray-50"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      {text.length} characters, {text.split(/\s+/).length} words
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Difficulty Level
-                    </label>
-                    <div className="flex gap-2">
-                      {(['easy', 'moderate', 'challenging'] as const).map((level) => (
-                        <button
-                          key={level}
-                          type="button"
-                          onClick={() => setDifficulty(level)}
-                          className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors ${
-                            difficulty === level
-                              ? 'bg-purple-600 text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          {level.charAt(0).toUpperCase() + level.slice(1)}
-                        </button>
-                      ))}
+                    <div 
+                      className="rounded-2xl p-4 border-2"
+                      style={{
+                        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                        borderColor: 'rgba(79, 70, 229, 0.3)'
+                      }}
+                    >
+                      <textarea
+                        value={text.substring(0, 300) + (text.length > 300 ? '...' : '')}
+                        readOnly
+                        className="w-full h-20 md:h-24 bg-transparent text-gray-300 text-sm resize-none focus:outline-none"
+                      />
+                      <div className="flex items-center gap-4 mt-2 pt-2 border-t" style={{ borderColor: 'rgba(79, 70, 229, 0.2)' }}>
+                        <span className="text-xs text-indigo-400 font-medium">
+                          📝 {text.length} characters
+                        </span>
+                        <span className="text-xs text-indigo-400 font-medium">
+                          📄 {text.split(/\s+/).length} words
+                        </span>
+                      </div>
                     </div>
                   </div>
 
+                  {/* Settings Grid - Two columns on larger screens */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Difficulty Level */}
+                    <div>
+                      <label className="block text-sm font-semibold text-white mb-3">
+                        🎯 Difficulty Level
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {(['easy', 'moderate', 'challenging'] as const).map((level) => {
+                          const isSelected = difficulty === level;
+                          return (
+                            <button
+                              key={level}
+                              type="button"
+                              onClick={() => setDifficulty(level)}
+                              className="px-3 py-3 rounded-xl font-semibold text-xs transition-all duration-200 hover:scale-105"
+                              style={{
+                                background: isSelected 
+                                  ? 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)'
+                                  : 'rgba(79, 70, 229, 0.1)',
+                                border: isSelected 
+                                  ? '2px solid rgba(79, 70, 229, 0.6)'
+                                  : '2px solid rgba(79, 70, 229, 0.3)',
+                                color: isSelected ? '#FFFFFF' : '#A5B4FC',
+                                boxShadow: isSelected ? '0 4px 12px rgba(79, 70, 229, 0.3)' : 'none'
+                              }}
+                            >
+                              {level.charAt(0).toUpperCase() + level.slice(1)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Number of Questions */}
+                    <div>
+                      <label className="block text-sm font-semibold text-white mb-3">
+                        🔢 Number of Questions
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="1"
+                          max="50"
+                          value={numberOfQuestions}
+                          onChange={(e) => setNumberOfQuestions(Math.max(1, Math.min(50, parseInt(e.target.value) || 10)))}
+                          className="w-20 px-3 py-3 rounded-xl text-white font-bold text-center focus:outline-none transition-all duration-200"
+                          style={{
+                            backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                            border: '2px solid rgba(79, 70, 229, 0.4)',
+                            boxShadow: '0 2px 8px rgba(79, 70, 229, 0.2)'
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = '#4F46E5';
+                            e.target.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.2)';
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = 'rgba(79, 70, 229, 0.4)';
+                            e.target.style.boxShadow = '0 2px 8px rgba(79, 70, 229, 0.2)';
+                          }}
+                        />
+                        <div className="flex gap-2 flex-1">
+                          {[5, 10, 20, 30].map((num) => (
+                            <button
+                              key={num}
+                              type="button"
+                              onClick={() => setNumberOfQuestions(num)}
+                              className="flex-1 px-2 py-2 rounded-lg font-semibold text-xs transition-all duration-200 hover:scale-105"
+                              style={{
+                                backgroundColor: numberOfQuestions === num 
+                                  ? 'rgba(139, 92, 246, 0.3)'
+                                  : 'rgba(79, 70, 229, 0.1)',
+                                border: numberOfQuestions === num 
+                                  ? '2px solid rgba(139, 92, 246, 0.5)'
+                                  : '2px solid rgba(79, 70, 229, 0.2)',
+                                color: numberOfQuestions === num ? '#A78BFA' : '#6B7280'
+                              }}
+                            >
+                              {num}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Question Types */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Question Types
+                    <label className="block text-sm font-semibold text-white mb-3">
+                      ❓ Question Types
                     </label>
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       {[
-                        { value: 'multiple-choice', label: 'Multiple Choice Questions (MCQs)' },
-                        { value: 'true-false', label: 'True or False' },
-                        { value: 'fill-in-blank', label: 'Fill in the Blank' }
-                      ].map((type) => (
-                        <label key={type.value} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={selectedQuestionTypes.includes(type.value)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedQuestionTypes([...selectedQuestionTypes, type.value]);
-                              } else {
+                        { value: 'multiple-choice', label: 'Multiple Choice', icon: '📝', color: '#4F46E5' },
+                        { value: 'true-false', label: 'True or False', icon: '✓✗', color: '#8B5CF6' },
+                        { value: 'fill-in-blank', label: 'Fill in the Blank', icon: '✍️', color: '#34D399' }
+                      ].map((type) => {
+                        const isSelected = selectedQuestionTypes.includes(type.value);
+                        return (
+                          <button
+                            key={type.value}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
                                 setSelectedQuestionTypes(selectedQuestionTypes.filter(t => t !== type.value));
+                              } else {
+                                setSelectedQuestionTypes([...selectedQuestionTypes, type.value]);
                               }
                             }}
-                            className="mr-2 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                          />
-                          <span className="text-sm text-gray-700">{type.label}</span>
-                        </label>
-                      ))}
+                            className="w-full flex flex-col md:flex-row items-center gap-3 p-4 rounded-xl transition-all duration-200 hover:scale-[1.02]"
+                            style={{
+                              background: isSelected 
+                                ? `linear-gradient(135deg, ${type.color}20 0%, ${type.color}10 100%)`
+                                : 'rgba(30, 41, 59, 0.5)',
+                              border: isSelected 
+                                ? `2px solid ${type.color}80`
+                                : '2px solid rgba(79, 70, 229, 0.2)',
+                              boxShadow: isSelected ? `0 4px 12px ${type.color}30` : 'none'
+                            }}
+                          >
+                            <div 
+                              className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
+                              style={{
+                                backgroundColor: isSelected ? `${type.color}30` : 'rgba(79, 70, 229, 0.2)'
+                              }}
+                            >
+                              {type.icon}
+                            </div>
+                            <span className={`font-semibold text-sm flex-1 text-left ${isSelected ? 'text-white' : 'text-gray-400'}`}>
+                              {type.label}
+                            </span>
+                            {isSelected && (
+                              <div 
+                                className="w-6 h-6 rounded-full flex items-center justify-center"
+                                style={{ backgroundColor: type.color }}
+                              >
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                     {selectedQuestionTypes.length === 0 && (
-                      <p className="text-xs text-red-600 mt-1">
+                      <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
                         Please select at least one question type
                       </p>
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Number of Questions
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="number"
-                        min="1"
-                        max="50"
-                        value={numberOfQuestions}
-                        onChange={(e) => setNumberOfQuestions(Math.max(1, Math.min(50, parseInt(e.target.value) || 10)))}
-                        className="w-24 px-3 py-2 border border-gray-300 rounded text-sm focus:ring-purple-500 focus:border-purple-500"
-                      />
-                      <div className="flex gap-2">
-                        {[5, 10, 20].map((num) => (
-                          <button
-                            key={num}
-                            type="button"
-                            onClick={() => setNumberOfQuestions(num)}
-                            className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-100"
-                          >
-                            {num}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      AI will generate this many questions from your document
-                    </p>
-                  </div>
                 </>
               )}
 
+              {/* Error Message */}
               {error && (
-                <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-                  {error}
+                <div 
+                  className="p-4 rounded-xl border-2 flex items-start gap-3"
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    borderColor: 'rgba(239, 68, 68, 0.4)'
+                  }}
+                >
+                  <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-sm text-red-300 font-medium">{error}</p>
                 </div>
               )}
 
-              <div className="flex space-x-3">
-                <button
-                  onClick={generateQuiz}
-                  disabled={!text || loading}
-                  className="flex-1 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Processing...' : 'Generate Quiz'}
-                </button>
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setShowAICreateModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+                  className="px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                  style={{
+                    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                    border: '2px solid rgba(139, 92, 246, 0.3)',
+                    color: '#A78BFA'
+                  }}
                 >
                   Cancel
+                </button>
+                <button
+                  onClick={generateQuiz}
+                  disabled={!text || loading || selectedQuestionTypes.length === 0}
+                  className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                    boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Generate Quiz
+                    </>
+                  )}
                 </button>
               </div>
             </div>
           )}
 
           {step === 'processing' && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-              <h4 className="text-lg font-medium mb-2">Generating Quiz...</h4>
-              <p className="text-gray-600">AI is analyzing your content and creating questions</p>
+            <div className="p-12 text-center">
+              <div className="relative w-24 h-24 mx-auto mb-6">
+                <div 
+                  className="absolute inset-0 rounded-full animate-spin"
+                  style={{
+                    border: '4px solid rgba(79, 70, 229, 0.2)',
+                    borderTopColor: '#4F46E5'
+                  }}
+                />
+                <div 
+                  className="absolute inset-2 rounded-full flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)'
+                  }}
+                >
+                  <svg className="w-10 h-10 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+              </div>
+              <h4 className="text-2xl font-bold text-white mb-3">Generating Your Quiz...</h4>
+              <p className="text-gray-400 mb-6">AI is analyzing your content and creating questions</p>
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 rounded-full bg-violet-500 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
             </div>
           )}
         </div>
@@ -527,17 +743,53 @@ const Dashboard: React.FC = () => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="p-6 border-b">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold">Quiz Preview</h3>
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 md:p-8">
+        <div 
+          className="rounded-3xl w-full max-w-6xl border-2 shadow-2xl overflow-hidden flex flex-col"
+          style={{
+            background: 'rgba(15, 23, 42, 0.98)',
+            borderColor: 'rgba(79, 70, 229, 0.4)',
+            boxShadow: '0 25px 50px rgba(79, 70, 229, 0.3)',
+            maxHeight: '90vh'
+          }}
+        >
+          {/* Header */}
+          <div 
+            className="p-6 border-b flex-shrink-0"
+            style={{
+              background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
+              borderColor: 'rgba(79, 70, 229, 0.3)'
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)'
+                  }}
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Quiz Preview</h3>
+                  <p className="text-sm text-gray-400">Review and edit before saving</p>
+                </div>
+              </div>
               <button
                 onClick={() => {
                   setShowAIPreview(false);
                   setAiQuizData(null);
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="p-2 rounded-xl transition-all duration-200 hover:scale-110"
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                  border: '2px solid rgba(239, 68, 68, 0.3)',
+                  color: '#F87171'
+                }}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -546,78 +798,294 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-6 space-y-6">
-            {/* Quiz Details */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Quiz Title</label>
-                <input
-                  type="text"
-                  value={editableQuiz.title}
-                  onChange={(e) => setEditableQuiz({...editableQuiz, title: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
+          {/* Scrollable Content */}
+          <div className="p-6 md:p-8 space-y-6 overflow-y-auto flex-1">
+            {/* Quiz Details Card */}
+            <div 
+              className="rounded-2xl p-6 border-2"
+              style={{
+                background: 'rgba(30, 41, 59, 0.5)',
+                borderColor: 'rgba(79, 70, 229, 0.3)'
+              }}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div 
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)'
+                  }}
+                >
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-bold text-white">Quiz Information</h4>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  value={editableQuiz.description}
-                  onChange={(e) => setEditableQuiz({...editableQuiz, description: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  rows={2}
-                />
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">
+                    📝 Quiz Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editableQuiz.title}
+                    onChange={(e) => setEditableQuiz({...editableQuiz, title: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none transition-all duration-200"
+                    style={{
+                      backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                      border: '2px solid rgba(79, 70, 229, 0.3)'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#4F46E5';
+                      e.target.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.2)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(79, 70, 229, 0.3)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">
+                    📄 Description
+                  </label>
+                  <textarea
+                    value={editableQuiz.description}
+                    onChange={(e) => setEditableQuiz({...editableQuiz, description: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none transition-all duration-200 resize-none"
+                    rows={3}
+                    style={{
+                      backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                      border: '2px solid rgba(79, 70, 229, 0.3)'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#4F46E5';
+                      e.target.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.2)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(79, 70, 229, 0.3)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+                
+                {/* Quiz Stats */}
+                <div className="grid grid-cols-3 gap-3 pt-2">
+                  <div 
+                    className="p-3 rounded-xl text-center"
+                    style={{
+                      backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                      border: '2px solid rgba(79, 70, 229, 0.3)'
+                    }}
+                  >
+                    <p className="text-2xl font-bold text-white">{editableQuiz.questions.length}</p>
+                    <p className="text-xs text-gray-400 font-medium">Questions</p>
+                  </div>
+                  <div 
+                    className="p-3 rounded-xl text-center"
+                    style={{
+                      backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                      border: '2px solid rgba(139, 92, 246, 0.3)'
+                    }}
+                  >
+                    <p className="text-2xl font-bold text-white capitalize">{editableQuiz.difficulty}</p>
+                    <p className="text-xs text-gray-400 font-medium">Difficulty</p>
+                  </div>
+                  <div 
+                    className="p-3 rounded-xl text-center"
+                    style={{
+                      backgroundColor: 'rgba(52, 211, 153, 0.2)',
+                      border: '2px solid rgba(52, 211, 153, 0.3)'
+                    }}
+                  >
+                    <p className="text-2xl font-bold text-white">{editableQuiz.questionTypes.length}</p>
+                    <p className="text-xs text-gray-400 font-medium">Types</p>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Questions Preview */}
             <div>
-              <h4 className="text-lg font-medium mb-4">Generated Questions ({editableQuiz.questions.length})</h4>
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {editableQuiz.questions.map((question, index) => (
-                  <div key={index} className="border border-gray-200 rounded p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-sm font-medium text-purple-600 uppercase">
-                        {(question.questionType || 'multiple-choice').replace('-', ' ')}
-                      </span>
-                      <span className="text-sm text-gray-500">Question {index + 1}</span>
-                    </div>
-                    <p className="font-medium mb-2">{question.questionText}</p>
-                    
-                    {question.questionType === 'fill-in-blank' ? (
-                      <div className="text-sm p-2 rounded bg-green-100 text-green-800">
-                        Answer: {question.correctAnswer}
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        {question.answerChoices?.map((option: string, optIndex: number) => (
-                          <div key={optIndex} className={`text-sm p-2 rounded ${optIndex === question.correctAnswer ? 'bg-green-100 text-green-800' : 'bg-gray-50'}`}>
-                            {String.fromCharCode(65 + optIndex)}. {option}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center"
+                    style={{
+                      background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)'
+                    }}
+                  >
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                   </div>
-                ))}
+                  <h4 className="text-lg font-bold text-white">Generated Questions</h4>
+                </div>
+                <span 
+                  className="px-4 py-2 rounded-xl font-bold text-sm"
+                  style={{
+                    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                    border: '2px solid rgba(139, 92, 246, 0.3)',
+                    color: '#A78BFA'
+                  }}
+                >
+                  {editableQuiz.questions.length} Questions
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {editableQuiz.questions.map((question, index) => {
+                  const typeColors = {
+                    'multiple-choice': { bg: '#4F46E5', light: 'rgba(79, 70, 229, 0.2)', border: 'rgba(79, 70, 229, 0.4)' },
+                    'true-false': { bg: '#8B5CF6', light: 'rgba(139, 92, 246, 0.2)', border: 'rgba(139, 92, 246, 0.4)' },
+                    'fill-in-blank': { bg: '#34D399', light: 'rgba(52, 211, 153, 0.2)', border: 'rgba(52, 211, 153, 0.4)' }
+                  };
+                  const questionType = question.questionType || 'multiple-choice';
+                  const colors = typeColors[questionType as keyof typeof typeColors];
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className="rounded-2xl p-5 border-2 transition-all duration-200 hover:scale-[1.02]"
+                      style={{
+                        background: 'rgba(30, 41, 59, 0.5)',
+                        borderColor: colors.border,
+                        boxShadow: `0 4px 12px ${colors.light}`
+                      }}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <span 
+                          className="px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider"
+                          style={{
+                            backgroundColor: colors.light,
+                            color: colors.bg,
+                            border: `2px solid ${colors.border}`
+                          }}
+                        >
+                          {questionType.replace('-', ' ')}
+                        </span>
+                        <span 
+                          className="px-3 py-1 rounded-lg text-xs font-bold"
+                          style={{
+                            backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                            color: '#A5B4FC'
+                          }}
+                        >
+                          #{index + 1}
+                        </span>
+                      </div>
+                      
+                      <p className="text-white font-semibold mb-3 leading-relaxed">
+                        {question.questionText}
+                      </p>
+                      
+                      {question.questionType === 'fill-in-blank' ? (
+                        <div 
+                          className="p-3 rounded-xl flex items-center gap-2"
+                          style={{
+                            backgroundColor: 'rgba(52, 211, 153, 0.2)',
+                            border: '2px solid rgba(52, 211, 153, 0.4)'
+                          }}
+                        >
+                          <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-sm font-semibold text-emerald-300">
+                            Answer: {question.correctAnswer}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {question.answerChoices?.map((option: string, optIndex: number) => {
+                            const isCorrect = optIndex === question.correctAnswer;
+                            return (
+                              <div 
+                                key={optIndex} 
+                                className="p-3 rounded-xl flex items-center gap-3 transition-all duration-200"
+                                style={{
+                                  backgroundColor: isCorrect ? 'rgba(52, 211, 153, 0.2)' : 'rgba(79, 70, 229, 0.1)',
+                                  border: isCorrect ? '2px solid rgba(52, 211, 153, 0.4)' : '2px solid rgba(79, 70, 229, 0.2)'
+                                }}
+                              >
+                                <span 
+                                  className="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0"
+                                  style={{
+                                    backgroundColor: isCorrect ? 'rgba(52, 211, 153, 0.3)' : 'rgba(79, 70, 229, 0.2)',
+                                    color: isCorrect ? '#34D399' : '#A5B4FC'
+                                  }}
+                                >
+                                  {String.fromCharCode(65 + optIndex)}
+                                </span>
+                                <span className={`text-sm flex-1 ${isCorrect ? 'text-emerald-300 font-semibold' : 'text-gray-400'}`}>
+                                  {option}
+                                </span>
+                                {isCorrect && (
+                                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex space-x-3 pt-4 border-t">
-              <button
-                onClick={saveQuiz}
-                disabled={saving}
-                className="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {saving ? 'Saving...' : 'Save Quiz'}
-              </button>
+          </div>
+
+          {/* Fixed Footer with Actions */}
+          <div 
+            className="p-6 border-t flex-shrink-0"
+            style={{
+              background: 'rgba(15, 23, 42, 0.98)',
+              borderColor: 'rgba(79, 70, 229, 0.3)'
+            }}
+          >
+            <div className="flex gap-3">
               <button
                 onClick={() => {
                   setShowAIPreview(false);
                   setAiQuizData(null);
                 }}
-                className="px-6 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+                className="px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                style={{
+                  backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                  border: '2px solid rgba(139, 92, 246, 0.3)',
+                  color: '#A78BFA'
+                }}
               >
                 Cancel
+              </button>
+              <button
+                onClick={saveQuiz}
+                disabled={saving}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                style={{
+                  background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                  boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+                }}
+              >
+                {saving ? (
+                  <>
+                    <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving Quiz...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save Quiz
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -759,15 +1227,6 @@ const Dashboard: React.FC = () => {
             icon: (
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            )
-          },
-          { 
-            id: 'create', 
-            label: 'Create Quiz',
-            icon: (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
             )
           },
@@ -1866,15 +2325,6 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {activeView === 'create' && (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">🚀</div>
-            <h2 className="text-2xl font-bold text-white mb-4">Create New Quiz</h2>
-            <button onClick={() => setShowAICreateModal(true)} className="px-8 py-4 bg-accent hover:bg-accent/90 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transition-all">
-              Start with AI Generator
-            </button>
-          </div>
-        )}
       </main>
 
       {/* AI Quiz Creation Modal */}
