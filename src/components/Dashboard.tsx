@@ -741,19 +741,85 @@ const Dashboard: React.FC = () => {
 
   // Sidebar Navigation Component
   const Sidebar = () => {
-    // Role-based navigation items
+    // Role-based navigation items with modern icons
     const navItems = user?.role === 'instructor' 
       ? [
-          { id: 'home', icon: '🏠', label: 'Home' },
-          { id: 'quizzes', icon: '📝', label: 'My Quizzes' },
-          { id: 'create', icon: '➕', label: 'Create Quiz' },
-          { id: 'analytics', icon: '📊', label: 'Analytics' },
-          { id: 'settings', icon: '⚙️', label: 'Settings' },
+          { 
+            id: 'home', 
+            label: 'Home',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            )
+          },
+          { 
+            id: 'quizzes', 
+            label: 'My Quizzes',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            )
+          },
+          { 
+            id: 'create', 
+            label: 'Create Quiz',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            )
+          },
+          { 
+            id: 'analytics', 
+            label: 'Analytics',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            )
+          },
+          { 
+            id: 'settings', 
+            label: 'Settings',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            )
+          },
         ]
       : [
-          { id: 'home', icon: '🏠', label: 'Home' },
-          { id: 'quizzes', icon: '📝', label: 'Available Quizzes' },
-          { id: 'settings', icon: '⚙️', label: 'Settings' },
+          { 
+            id: 'home', 
+            label: 'Home',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            )
+          },
+          { 
+            id: 'quizzes', 
+            label: 'Available Quizzes',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            )
+          },
+          { 
+            id: 'settings', 
+            label: 'Settings',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            )
+          },
         ];
 
     return (
@@ -761,112 +827,401 @@ const Dashboard: React.FC = () => {
         {/* Mobile Overlay */}
         {mobileMenuOpen && (
           <div 
-            className="fixed inset-0 bg-black/50 z-30 md:hidden"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-30 md:hidden"
             onClick={() => setMobileMenuOpen(false)}
           />
         )}
         
-        {/* Sidebar */}
-        <aside className={`fixed left-0 top-0 h-full bg-gray-900 border-r border-gray-800 transition-all duration-300 z-40 
-          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
-          md:translate-x-0
-          ${sidebarCollapsed ? 'w-20' : 'w-64'}`}>
+        {/* Modern Sidebar */}
+        <aside 
+          className={`fixed left-0 top-0 h-full border-r backdrop-blur-xl transition-all duration-300 z-40 
+            ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
+            md:translate-x-0
+            ${sidebarCollapsed ? 'w-20' : 'w-72'}`}
+          style={{
+            background: 'rgba(15, 23, 42, 0.95)',
+            borderColor: 'rgba(79, 70, 229, 0.2)',
+            boxShadow: '4px 0 24px rgba(0, 0, 0, 0.3)'
+          }}
+        >
           <div className="flex flex-col h-full">
-            <div className="p-4 md:p-6 border-b border-gray-800">
+            {/* Logo Section */}
+            <div 
+              className="p-6 border-b"
+              style={{
+                borderColor: 'rgba(79, 70, 229, 0.2)'
+              }}
+            >
               <div className="flex items-center justify-between">
                 {!sidebarCollapsed && (
-                  <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                    QuizMate
-                  </h1>
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{
+                        background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                        boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)'
+                      }}
+                    >
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h1 
+                        className="text-xl font-bold"
+                        style={{
+                          background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text'
+                        }}
+                      >
+                        QuizMate
+                      </h1>
+                      <p className="text-xs text-gray-400">AI-Powered Learning</p>
+                    </div>
+                  </div>
                 )}
                 <button
                   onClick={() => {
                     setSidebarCollapsed(!sidebarCollapsed);
                     setMobileMenuOpen(false);
                   }}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
+                  style={{
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    color: '#A5B4FC'
+                  }}
                 >
-                  {sidebarCollapsed ? '→' : '←'}
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {sidebarCollapsed ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                    )}
+                  </svg>
                 </button>
               </div>
             </div>
-          <nav className="flex-1 p-4 space-y-2">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveView(item.id as any)}
-                className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-all ${
-                  activeView === item.id
-                    ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+
+            {/* Navigation */}
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+              {navItems.map((item) => {
+                const isActive = activeView === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveView(item.id as any);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group relative overflow-hidden ${
+                      sidebarCollapsed ? 'justify-center' : ''
+                    }`}
+                    style={{
+                      background: isActive 
+                        ? 'linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)'
+                        : 'transparent',
+                      border: isActive 
+                        ? '2px solid rgba(79, 70, 229, 0.4)'
+                        : '2px solid transparent',
+                      color: isActive ? '#A5B4FC' : '#9CA3AF',
+                      boxShadow: isActive ? '0 4px 12px rgba(79, 70, 229, 0.2)' : 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.backgroundColor = 'rgba(79, 70, 229, 0.1)';
+                        e.currentTarget.style.borderColor = 'rgba(79, 70, 229, 0.2)';
+                        e.currentTarget.style.color = '#C7D2FE';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.borderColor = 'transparent';
+                        e.currentTarget.style.color = '#9CA3AF';
+                      }
+                    }}
+                  >
+                    {isActive && (
+                      <div 
+                        className="absolute inset-0 opacity-20"
+                        style={{
+                          background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)'
+                        }}
+                      />
+                    )}
+                    <div className={`relative ${isActive ? 'scale-110' : 'group-hover:scale-110'} transition-transform duration-200`}>
+                      {item.icon}
+                    </div>
+                    {!sidebarCollapsed && (
+                      <span className="relative font-semibold text-sm">
+                        {item.label}
+                      </span>
+                    )}
+                    {isActive && !sidebarCollapsed && (
+                      <div 
+                        className="ml-auto w-2 h-2 rounded-full"
+                        style={{
+                          background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                          boxShadow: '0 0 8px rgba(52, 211, 153, 0.6)'
+                        }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* User Profile Section */}
+            <div 
+              className="p-4 border-t"
+              style={{
+                borderColor: 'rgba(79, 70, 229, 0.2)'
+              }}
+            >
+              <div 
+                className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer ${
+                  sidebarCollapsed ? 'justify-center' : ''
                 }`}
+                style={{
+                  background: 'rgba(79, 70, 229, 0.1)',
+                  border: '2px solid rgba(79, 70, 229, 0.2)'
+                }}
               >
-                <span className="text-2xl">{item.icon}</span>
-                {!sidebarCollapsed && <span className="font-medium">{item.label}</span>}
-              </button>
-            ))}
-          </nav>
-          <div className="p-4 border-t border-gray-800">
-            <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold">
-                {user?.username?.charAt(0).toUpperCase()}
-              </div>
-              {!sidebarCollapsed && (
-                <div className="flex-1">
-                  <p className="text-white font-medium text-sm">{user?.username}</p>
-                  <p className="text-gray-400 text-xs">{user?.role}</p>
+                <div 
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)'
+                  }}
+                >
+                  {user?.username?.charAt(0).toUpperCase()}
                 </div>
-              )}
+                {!sidebarCollapsed && (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-semibold text-sm truncate">{user?.username}</p>
+                    <p 
+                      className="text-xs font-medium capitalize truncate"
+                      style={{ color: '#A5B4FC' }}
+                    >
+                      {user?.role}
+                    </p>
+                  </div>
+                )}
+                {!sidebarCollapsed && (
+                  <button
+                    onClick={logout}
+                    className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
+                    style={{
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      color: '#F87171'
+                    }}
+                    title="Logout"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </aside>
+        </aside>
       </>
     );
   };
 
   // Top Header Component
   const TopHeader = () => (
-    <header className="fixed top-0 right-0 left-0 h-16 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 z-30 md:ml-0"
-      style={{ marginLeft: window.innerWidth >= 768 ? (sidebarCollapsed ? '5rem' : '16rem') : '0' }}>
-      <div className="h-full px-4 md:px-6 flex items-center justify-between gap-2 md:gap-4">
+    <header 
+      className="fixed top-0 right-0 left-0 h-20 backdrop-blur-xl border-b z-30 md:ml-0 transition-all duration-300"
+      style={{ 
+        marginLeft: window.innerWidth >= 768 ? (sidebarCollapsed ? '5rem' : '18rem') : '0',
+        background: 'rgba(15, 23, 42, 0.95)',
+        borderColor: 'rgba(79, 70, 229, 0.2)',
+        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)'
+      }}
+    >
+      <div className="h-full px-4 md:px-8 flex items-center justify-between gap-4">
         {/* Mobile Menu Button */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
+          className="md:hidden p-2.5 rounded-xl transition-all duration-200 hover:scale-110"
+          style={{
+            backgroundColor: 'rgba(79, 70, 229, 0.2)',
+            border: '2px solid rgba(79, 70, 229, 0.3)',
+            color: '#A5B4FC'
+          }}
         >
-          <span className="text-2xl">☰</span>
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
         </button>
 
-        <div className="flex-1 max-w-xl">
+        {/* Search Bar */}
+        <div className="flex-1 max-w-2xl">
           <div className="relative hidden sm:block">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
             <input
               type="text"
-              placeholder="Search quizzes..."
-              className="w-full px-4 py-2 pl-10 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base"
+              placeholder="Search quizzes, questions, or topics..."
+              className="w-full px-4 py-3 pl-12 pr-4 rounded-xl text-white placeholder-gray-500 focus:outline-none transition-all duration-200 text-sm"
+              style={{
+                background: 'rgba(30, 41, 59, 0.5)',
+                border: '2px solid rgba(79, 70, 229, 0.2)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#4F46E5';
+                e.target.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(79, 70, 229, 0.2)';
+                e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+              }}
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
           </div>
-          <button className="sm:hidden p-2 text-gray-400 hover:text-white">
-            <span className="text-xl">🔍</span>
+          <button 
+            className="sm:hidden p-2.5 rounded-xl transition-all duration-200 hover:scale-110"
+            style={{
+              backgroundColor: 'rgba(79, 70, 229, 0.2)',
+              border: '2px solid rgba(79, 70, 229, 0.3)',
+              color: '#A5B4FC'
+            }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </button>
         </div>
-        <div className="flex items-center gap-4">
-          <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
-            <span className="text-2xl">🔔</span>
-            <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full"></span>
+
+        {/* Right Side Actions */}
+        <div className="flex items-center gap-3">
+          {/* Notifications */}
+          <button 
+            className="relative p-2.5 rounded-xl transition-all duration-200 hover:scale-110 hidden sm:block"
+            style={{
+              backgroundColor: 'rgba(79, 70, 229, 0.1)',
+              border: '2px solid rgba(79, 70, 229, 0.2)',
+              color: '#A5B4FC'
+            }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span 
+              className="absolute top-1 right-1 w-2 h-2 rounded-full animate-pulse"
+              style={{
+                background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                boxShadow: '0 0 8px rgba(52, 211, 153, 0.6)'
+              }}
+            />
           </button>
-          <div className="relative group">
-            <button className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold hover:shadow-lg transition-shadow">
-              {user?.username?.charAt(0).toUpperCase()}
+
+          {/* Quick Actions (Instructor only) */}
+          {user?.role === 'instructor' && (
+            <button 
+              onClick={() => setShowAICreateModal(true)}
+              className="hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105"
+              style={{
+                background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+              }}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span className="text-sm">New Quiz</span>
             </button>
-            <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-xl border border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-              <button
-                onClick={logout}
-                className="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-colors"
+          )}
+
+          {/* User Profile Dropdown */}
+          <div className="relative group">
+            <button 
+              className="flex items-center gap-3 p-2 pr-3 rounded-xl transition-all duration-200 hover:scale-105"
+              style={{
+                background: 'rgba(79, 70, 229, 0.1)',
+                border: '2px solid rgba(79, 70, 229, 0.2)'
+              }}
+            >
+              <div 
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+                style={{
+                  background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                  boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)'
+                }}
               >
-                Logout
-              </button>
+                {user?.username?.charAt(0).toUpperCase()}
+              </div>
+              <div className="hidden md:block text-left">
+                <p className="text-white font-semibold text-sm leading-tight">{user?.username}</p>
+                <p className="text-xs capitalize" style={{ color: '#A5B4FC' }}>{user?.role}</p>
+              </div>
+              <svg className="w-4 h-4 text-indigo-400 hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Dropdown Menu */}
+            <div 
+              className="absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 overflow-hidden"
+              style={{
+                background: 'rgba(15, 23, 42, 0.98)',
+                border: '2px solid rgba(79, 70, 229, 0.3)',
+                boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)'
+              }}
+            >
+              <div className="p-4 border-b" style={{ borderColor: 'rgba(79, 70, 229, 0.2)' }}>
+                <p className="text-white font-semibold text-sm">{user?.username}</p>
+                <p className="text-gray-400 text-xs">{user?.email}</p>
+              </div>
+              
+              <div className="p-2">
+                <button
+                  onClick={() => setActiveView('settings')}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-300 hover:text-white transition-all duration-200"
+                  style={{
+                    backgroundColor: 'transparent'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(79, 70, 229, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-sm font-medium">Settings</span>
+                </button>
+                
+                <button
+                  onClick={logout}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200"
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: '#F87171'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span className="text-sm font-medium">Logout</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -922,8 +1277,8 @@ const Dashboard: React.FC = () => {
       <Sidebar />
       <TopHeader />
       
-      <main className="pt-20 md:pt-24 pb-8 px-4 sm:px-6 md:px-8 transition-all duration-300 md:ml-0" 
-        style={{ marginLeft: window.innerWidth >= 768 ? (sidebarCollapsed ? '5rem' : '16rem') : '0' }}>
+      <main className="pt-24 md:pt-28 pb-8 px-4 sm:px-6 md:px-8 transition-all duration-300 md:ml-0" 
+        style={{ marginLeft: window.innerWidth >= 768 ? (sidebarCollapsed ? '5rem' : '18rem') : '0' }}>
         {activeView === 'home' && (
           <div className="space-y-8">
             {/* Welcome Banner */}
