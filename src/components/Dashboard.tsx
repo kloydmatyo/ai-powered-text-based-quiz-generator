@@ -2165,7 +2165,11 @@ const Dashboard: React.FC = () => {
                   </svg>
                   <span className="text-sm font-semibold text-gray-400">Quizzes</span>
                 </div>
-                <p className="text-3xl font-bold text-white">{selectedClass.quizzes?.length || 0}</p>
+                <p className="text-3xl font-bold text-white">
+                  {selectedClass.quizzes?.filter((quizId: string) => 
+                    quizzes.some(q => q._id === quizId)
+                  ).length || 0}
+                </p>
               </div>
             </div>
 
@@ -2271,27 +2275,34 @@ const Dashboard: React.FC = () => {
             }}
           >
             <div className="flex gap-3">
-              {selectedClass.quizzes && selectedClass.quizzes.length > 0 && (
-                <button
-                  onClick={async () => {
-                    setSelectedClassFilter(selectedClass._id);
-                    setActiveView('quizzes');
-                    setSelectedClass(null);
-                    // Fetch quizzes to ensure they're loaded
-                    await fetchQuizzes();
-                  }}
-                  className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
-                  style={{
-                    background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
-                    boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
-                  }}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  View Quizzes ({selectedClass.quizzes.length})
-                </button>
-              )}
+              {selectedClass.quizzes && selectedClass.quizzes.length > 0 && (() => {
+                // Count only quizzes that actually exist
+                const existingQuizCount = selectedClass.quizzes.filter((quizId: string) => 
+                  quizzes.some(q => q._id === quizId)
+                ).length;
+                
+                return existingQuizCount > 0 ? (
+                  <button
+                    onClick={async () => {
+                      setSelectedClassFilter(selectedClass._id);
+                      setActiveView('quizzes');
+                      setSelectedClass(null);
+                      // Fetch quizzes to ensure they're loaded
+                      await fetchQuizzes();
+                    }}
+                    className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
+                    style={{
+                      background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                      boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    View Quizzes ({existingQuizCount})
+                  </button>
+                ) : null;
+              })()}
               <button
                 onClick={() => setSelectedClass(null)}
                 className={`px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 ${selectedClass.quizzes && selectedClass.quizzes.length > 0 ? '' : 'w-full'}`}
