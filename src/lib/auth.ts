@@ -41,16 +41,10 @@ export const validatePassword = (
       message: "Password must be at least 6 characters long",
     };
   }
-  if (!/(?=.*[a-z])/.test(password)) {
-    return {
-      isValid: false,
-      message: "Password must contain at least one lowercase letter",
-    };
-  }
   if (!/(?=.*[A-Z])/.test(password)) {
     return {
       isValid: false,
-      message: "Password must contain at least one uppercase letter",
+      message: "Password must contain at least one capital letter",
     };
   }
   if (!/(?=.*\d)/.test(password)) {
