@@ -13,6 +13,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('learner');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const { register } = useAuth();
@@ -24,6 +25,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
     try {
       await register(email, username, password, role);
+      setSuccess(true);
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        onSwitchToLogin();
+      }, 2000);
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -93,6 +99,22 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             </h1>
             <p className="text-gray-400 text-sm">Create your account to get started</p>
           </div>
+
+          {/* Success Message */}
+          {success && (
+            <div 
+              className="mb-6 px-4 py-3 rounded-xl border flex items-start gap-3"
+              style={{ 
+                backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                borderColor: 'rgba(52, 211, 153, 0.3)'
+              }}
+            >
+              <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-green-300 text-sm">Account created successfully! Redirecting to login...</span>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (
@@ -287,7 +309,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             {/* Create Account Button */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || success}
               className="w-full py-3.5 px-6 rounded-xl text-white font-semibold text-base transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg mt-6"
               style={{ 
                 background: loading ? '#6366F1' : 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
