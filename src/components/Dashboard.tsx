@@ -62,6 +62,7 @@ const Dashboard: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<any>(null);
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>('all'); // 'all' or classId
   const [quizSubmissionCounts, setQuizSubmissionCounts] = useState<{ [quizId: string]: number }>({});
+  const [learnerSubmissions, setLearnerSubmissions] = useState<{ [quizId: string]: any }>({});
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -84,6 +85,7 @@ const Dashboard: React.FC = () => {
     fetchClasses();
     fetchNotifications();
     fetchSubmissionCounts();
+    fetchLearnerSubmissions();
     
     // Poll for new notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
@@ -184,6 +186,35 @@ const Dashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching submission counts:', error);
+    }
+  };
+
+  const fetchLearnerSubmissions = async () => {
+    if (user?.role !== 'learner') return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/quiz-submissions', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const submissions = data.submissions || [];
+        
+        // Map submissions by quizId
+        const submissionMap: { [quizId: string]: any } = {};
+        submissions.forEach((sub: any) => {
+          const quizId = sub.quizId?._id || sub.quizId;
+          if (quizId) {
+            submissionMap[quizId] = sub;
+          }
+        });
+        
+        setLearnerSubmissions(submissionMap);
+      }
+    } catch (error) {
+      console.error('Error fetching learner submissions:', error);
     }
   };
 
@@ -3371,11 +3402,12 @@ const Dashboard: React.FC = () => {
                 {quizzes.slice(0, 6).map((quiz) => (
                   <div 
                     key={quiz._id}
-                    className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl cursor-pointer"
+                    className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl cursor-pointer flex flex-col"
                     style={{
                       background: 'rgba(15, 23, 42, 0.6)',
                       borderColor: 'rgba(79, 70, 229, 0.2)',
-                      boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)'
+                      boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)',
+                      minHeight: '320px'
                     }}
                     onClick={() => setSelectedQuiz(quiz)}
                   >
@@ -3385,7 +3417,7 @@ const Dashboard: React.FC = () => {
                       }}
                     />
                     
-                    <div className="relative p-6">
+                    <div className="relative p-6 flex flex-col flex-1">
                       <div className="flex items-start justify-between mb-4">
                         <div 
                           className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
@@ -3405,11 +3437,35 @@ const Dashboard: React.FC = () => {
                       <h4 className="text-white font-bold text-lg mb-2 group-hover:text-indigo-300 transition-colors line-clamp-1">
                         {quiz.title}
                       </h4>
-                      <p className="text-gray-400 text-sm line-clamp-2 mb-4">
+                      
+                      {/* Submitted badge for learners */}
+                      {user?.role === 'learner' && (
+                        <div className="mb-3 min-h-[28px]">
+                          {learnerSubmissions[quiz._id] && (
+                            <span 
+                              className="text-xs font-semibold px-2 py-1 rounded-lg inline-flex items-center gap-1"
+                              style={{
+                                background: 'rgba(34, 211, 238, 0.2)',
+                                border: '1px solid rgba(34, 211, 238, 0.4)',
+                                color: '#67E8F9'
+                              }}
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Submitted ({learnerSubmissions[quiz._id].score}%)
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      
+                      <p className="text-gray-400 text-sm line-clamp-2 mb-3">
                         {quiz.description || 'No description provided'}
                       </p>
                       
-                      <div className="flex gap-2">
+                      <div className="flex-1"></div>
+                      
+                      <div className="flex gap-2 mt-auto">
                         <button 
                           className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105"
                           style={{
@@ -3421,7 +3477,11 @@ const Dashboard: React.FC = () => {
                             setSelectedQuiz(quiz);
                           }}
                         >
-                          {user?.role === 'instructor' ? 'Manage' : 'Take Quiz'}
+                          {user?.role === 'instructor' 
+                            ? 'Manage' 
+                            : learnerSubmissions[quiz._id] 
+                              ? 'View Results' 
+                              : 'Take Quiz'}
                         </button>
                         {user?.role === 'instructor' && (
                           <button 
@@ -3647,11 +3707,12 @@ const Dashboard: React.FC = () => {
                     {filteredQuizzes.map((quiz) => (
                 <div 
                   key={quiz._id}
-                  className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
+                  className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl flex flex-col"
                   style={{
                     background: 'rgba(15, 23, 42, 0.6)',
                     borderColor: 'rgba(79, 70, 229, 0.2)',
-                    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)'
+                    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)',
+                    minHeight: '340px'
                   }}
                 >
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -3660,7 +3721,7 @@ const Dashboard: React.FC = () => {
                     }}
                   />
                   
-                  <div className="relative p-6">
+                  <div className="relative p-6 flex flex-col flex-1">
                     <div className="flex items-start justify-between mb-4">
                       <div 
                         className="w-14 h-14 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
@@ -3677,22 +3738,19 @@ const Dashboard: React.FC = () => {
                       </span>
                     </div>
                     
-                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">
+                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors line-clamp-1">
                       {quiz.title}
                     </h3>
-                    <p className="text-gray-400 text-sm line-clamp-2 mb-2">
-                      {quiz.description || 'No description available'}
-                    </p>
                     
-                    {/* Class badge for learners */}
+                    {/* Class badge and submission status for learners */}
                     {user?.role === 'learner' && (
-                      <div className="flex flex-wrap gap-1 mb-4">
+                      <div className="flex flex-wrap gap-1 mb-3 min-h-[32px]">
                         {classes
                           .filter(c => c.quizzes?.includes(quiz._id))
                           .map(classItem => (
                             <span 
                               key={classItem._id}
-                              className="text-xs font-semibold px-2 py-1 rounded-lg"
+                              className="text-xs font-semibold px-2 py-1 rounded-lg h-fit"
                               style={{
                                 background: 'rgba(139, 92, 246, 0.2)',
                                 border: '1px solid rgba(139, 92, 246, 0.4)',
@@ -3702,12 +3760,27 @@ const Dashboard: React.FC = () => {
                               📚 {classItem.name}
                             </span>
                           ))}
+                        {learnerSubmissions[quiz._id] && (
+                          <span 
+                            className="text-xs font-semibold px-2 py-1 rounded-lg flex items-center gap-1 h-fit"
+                            style={{
+                              background: 'rgba(34, 211, 238, 0.2)',
+                              border: '1px solid rgba(34, 211, 238, 0.4)',
+                              color: '#67E8F9'
+                            }}
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Submitted ({learnerSubmissions[quiz._id].score}%)
+                          </span>
+                        )}
                       </div>
                     )}
                     
                     {/* Submission count for instructors */}
                     {user?.role === 'instructor' && (
-                      <div className="flex items-center gap-2 mb-4">
+                      <div className="flex items-center gap-2 mb-3 min-h-[32px]">
                         <span 
                           className="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5"
                           style={{
@@ -3724,7 +3797,13 @@ const Dashboard: React.FC = () => {
                       </div>
                     )}
                     
-                    <div className="flex gap-2">
+                    <p className="text-gray-400 text-sm line-clamp-2 mb-3">
+                      {quiz.description || 'No description available'}
+                    </p>
+                    
+                    <div className="flex-1"></div>
+                    
+                    <div className="flex gap-2 mt-auto">
                       <button 
                         onClick={() => setSelectedQuiz(quiz)}
                         className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105"
@@ -3733,7 +3812,11 @@ const Dashboard: React.FC = () => {
                           boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
                         }}
                       >
-                        {user?.role === 'instructor' ? 'Manage' : 'Take Quiz'}
+                        {user?.role === 'instructor' 
+                          ? 'Manage' 
+                          : learnerSubmissions[quiz._id] 
+                            ? 'View Results' 
+                            : 'Take Quiz'}
                       </button>
                       {user?.role === 'instructor' && (
                         <>
