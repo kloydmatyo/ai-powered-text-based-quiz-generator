@@ -42,7 +42,7 @@ const Dashboard: React.FC = () => {
     sourceText: string;
   } | null>(null);
   const [showAIPreview, setShowAIPreview] = useState(false);
-  const [activeView, setActiveView] = useState<'home' | 'quizzes' | 'create' | 'analytics' | 'settings'>('home');
+  const [activeView, setActiveView] = useState<'home' | 'quizzes' | 'classes' | 'analytics' | 'settings'>('home');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
     totalQuizzes: 0,
@@ -54,11 +54,34 @@ const Dashboard: React.FC = () => {
   const [editingUsername, setEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [savingUsername, setSavingUsername] = useState(false);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [showCreateClassModal, setShowCreateClassModal] = useState(false);
+  const [showJoinClassModal, setShowJoinClassModal] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<any>(null);
 
   useEffect(() => {
     fetchQuizzes();
     fetchStats();
+    fetchClasses();
   }, []);
+
+  const fetchClasses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/classes', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setClasses(data.classes);
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+    }
+  };
 
 
 
@@ -1099,6 +1122,660 @@ const Dashboard: React.FC = () => {
     );
   };
 
+  // Create Class Modal Component
+  const CreateClassModal = () => {
+    const [className, setClassName] = useState('');
+    const [classDescription, setClassDescription] = useState('');
+    const [creating, setCreating] = useState(false);
+
+    const handleCreateClass = async () => {
+      if (!className.trim()) {
+        alert('Please enter a class name');
+        return;
+      }
+
+      setCreating(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/classes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: className,
+            description: classDescription
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          await fetchClasses();
+          setShowCreateClassModal(false);
+          setClassName('');
+          setClassDescription('');
+          // Show success with class code
+          alert(`Class created successfully! Class Code: ${data.class.classCode}`);
+        } else {
+          const errorData = await response.json();
+          alert(errorData.error || 'Failed to create class');
+        }
+      } catch (error) {
+        console.error('Error creating class:', error);
+        alert('An error occurred while creating the class');
+      } finally {
+        setCreating(false);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div 
+          className="rounded-3xl w-full max-w-lg border-2 shadow-2xl"
+          style={{
+            background: 'rgba(15, 23, 42, 0.98)',
+            borderColor: 'rgba(79, 70, 229, 0.4)',
+            boxShadow: '0 25px 50px rgba(79, 70, 229, 0.3)'
+          }}
+        >
+          {/* Header */}
+          <div 
+            className="p-6 border-b"
+            style={{
+              background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
+              borderColor: 'rgba(79, 70, 229, 0.3)'
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.4)'
+                  }}
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Create New Class</h3>
+                  <p className="text-sm text-gray-400">Set up a class for your students</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowCreateClassModal(false);
+                  setClassName('');
+                  setClassDescription('');
+                }}
+                className="p-2 rounded-xl transition-all duration-200 hover:scale-110"
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                  border: '2px solid rgba(239, 68, 68, 0.3)',
+                  color: '#F87171'
+                }}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-white mb-3">
+                🏫 Class Name
+              </label>
+              <input
+                type="text"
+                value={className}
+                onChange={(e) => setClassName(e.target.value)}
+                placeholder="e.g., Computer Science 101"
+                className="w-full px-4 py-3 rounded-xl text-white focus:outline-none transition-all duration-200"
+                style={{
+                  backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                  border: '2px solid rgba(79, 70, 229, 0.3)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#4F46E5';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.2)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(79, 70, 229, 0.3)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-white mb-3">
+                📝 Description (Optional)
+              </label>
+              <textarea
+                value={classDescription}
+                onChange={(e) => setClassDescription(e.target.value)}
+                placeholder="Brief description of the class..."
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl text-white focus:outline-none transition-all duration-200 resize-none"
+                style={{
+                  backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                  border: '2px solid rgba(79, 70, 229, 0.3)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#4F46E5';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.2)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(79, 70, 229, 0.3)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
+            </div>
+
+            <div 
+              className="p-4 rounded-xl flex items-start gap-3"
+              style={{
+                backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                border: '2px solid rgba(52, 211, 153, 0.3)'
+              }}
+            >
+              <svg className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm text-emerald-300">
+                A unique 6-character class code will be automatically generated for students to join.
+              </p>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div 
+            className="p-6 border-t"
+            style={{
+              borderColor: 'rgba(79, 70, 229, 0.3)'
+            }}
+          >
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCreateClassModal(false);
+                  setClassName('');
+                  setClassDescription('');
+                }}
+                className="px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                style={{
+                  backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                  border: '2px solid rgba(139, 92, 246, 0.3)',
+                  color: '#A78BFA'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateClass}
+                disabled={creating || !className.trim()}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                style={{
+                  background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                  boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+                }}
+              >
+                {creating ? (
+                  <>
+                    <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Create Class
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Join Class Modal Component (for learners)
+  const JoinClassModal = () => {
+    const [classCode, setClassCode] = useState('');
+    const [joining, setJoining] = useState(false);
+
+    const handleJoinClass = async () => {
+      if (!classCode.trim()) {
+        alert('Please enter a class code');
+        return;
+      }
+
+      setJoining(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/classes/join', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ classCode: classCode.trim().toUpperCase() }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          await fetchClasses();
+          setShowJoinClassModal(false);
+          setClassCode('');
+          alert(`Successfully joined ${data.class.name}!`);
+        } else {
+          alert(data.error || 'Failed to join class');
+        }
+      } catch (error) {
+        console.error('Error joining class:', error);
+        alert('An error occurred while joining the class');
+      } finally {
+        setJoining(false);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div 
+          className="rounded-3xl w-full max-w-lg border-2 shadow-2xl"
+          style={{
+            background: 'rgba(15, 23, 42, 0.98)',
+            borderColor: 'rgba(52, 211, 153, 0.4)',
+            boxShadow: '0 25px 50px rgba(52, 211, 153, 0.3)'
+          }}
+        >
+          {/* Header */}
+          <div 
+            className="p-6 border-b"
+            style={{
+              background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%)',
+              borderColor: 'rgba(52, 211, 153, 0.3)'
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                    boxShadow: '0 4px 12px rgba(52, 211, 153, 0.4)'
+                  }}
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Join a Class</h3>
+                  <p className="text-sm text-gray-400">Enter your class code</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowJoinClassModal(false);
+                  setClassCode('');
+                }}
+                className="p-2 rounded-xl transition-all duration-200 hover:scale-110"
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                  border: '2px solid rgba(239, 68, 68, 0.3)',
+                  color: '#F87171'
+                }}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-white mb-3">
+                🔑 Class Code
+              </label>
+              <input
+                type="text"
+                value={classCode}
+                onChange={(e) => setClassCode(e.target.value.toUpperCase())}
+                placeholder="Enter 6-character code"
+                maxLength={6}
+                className="w-full px-4 py-4 rounded-xl text-white text-center text-2xl font-bold tracking-widest focus:outline-none transition-all duration-200 uppercase"
+                style={{
+                  backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                  border: '2px solid rgba(52, 211, 153, 0.3)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#34D399';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(52, 211, 153, 0.2)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(52, 211, 153, 0.3)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
+              <p className="text-xs text-gray-400 mt-2 text-center">
+                Ask your instructor for the class code
+              </p>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div 
+            className="p-6 border-t"
+            style={{
+              borderColor: 'rgba(52, 211, 153, 0.3)'
+            }}
+          >
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowJoinClassModal(false);
+                  setClassCode('');
+                }}
+                className="px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                style={{
+                  backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                  border: '2px solid rgba(139, 92, 246, 0.3)',
+                  color: '#A78BFA'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleJoinClass}
+                disabled={joining || classCode.length !== 6}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                style={{
+                  background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                  boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+                }}
+              >
+                {joining ? (
+                  <>
+                    <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Joining...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    Join Class
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Class Details Modal Component
+  const ClassDetailsModal = () => {
+    if (!selectedClass) return null;
+
+    const isInstructor = user?.role === 'instructor';
+
+    return (
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div 
+          className="rounded-3xl w-full max-w-4xl border-2 shadow-2xl max-h-[90vh] overflow-y-auto"
+          style={{
+            background: 'rgba(15, 23, 42, 0.98)',
+            borderColor: 'rgba(139, 92, 246, 0.4)',
+            boxShadow: '0 25px 50px rgba(139, 92, 246, 0.3)'
+          }}
+        >
+          {/* Header */}
+          <div 
+            className="p-6 border-b sticky top-0 z-10"
+            style={{
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(79, 70, 229, 0.2) 100%)',
+              borderColor: 'rgba(139, 92, 246, 0.3)',
+              backdropFilter: 'blur(20px)'
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div 
+                  className="w-14 h-14 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                    boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)'
+                  }}
+                >
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">{selectedClass.name}</h3>
+                  <p className="text-sm text-gray-400">{selectedClass.description || 'No description'}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedClass(null)}
+                className="p-2 rounded-xl transition-all duration-200 hover:scale-110"
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                  border: '2px solid rgba(239, 68, 68, 0.3)',
+                  color: '#F87171'
+                }}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-6">
+            {/* Class Info Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {isInstructor && (
+                <div 
+                  className="rounded-2xl p-6 border-2"
+                  style={{
+                    background: 'rgba(52, 211, 153, 0.1)',
+                    borderColor: 'rgba(52, 211, 153, 0.3)'
+                  }}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                    <span className="text-sm font-semibold text-gray-400">Class Code</span>
+                  </div>
+                  <div 
+                    className="text-3xl font-bold tracking-wider cursor-pointer hover:scale-105 transition-transform text-center py-2 rounded-lg"
+                    style={{ 
+                      backgroundColor: 'rgba(52, 211, 153, 0.2)',
+                      color: '#34D399'
+                    }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedClass.classCode);
+                      alert('Class code copied to clipboard!');
+                    }}
+                    title="Click to copy"
+                  >
+                    {selectedClass.classCode}
+                  </div>
+                </div>
+              )}
+              
+              <div 
+                className="rounded-2xl p-6 border-2"
+                style={{
+                  background: 'rgba(79, 70, 229, 0.1)',
+                  borderColor: 'rgba(79, 70, 229, 0.3)'
+                }}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  <span className="text-sm font-semibold text-gray-400">Students</span>
+                </div>
+                <p className="text-3xl font-bold text-white">{selectedClass.learners?.length || 0}</p>
+              </div>
+
+              <div 
+                className="rounded-2xl p-6 border-2"
+                style={{
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  borderColor: 'rgba(139, 92, 246, 0.3)'
+                }}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <svg className="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className="text-sm font-semibold text-gray-400">Quizzes</span>
+                </div>
+                <p className="text-3xl font-bold text-white">{selectedClass.quizzes?.length || 0}</p>
+              </div>
+            </div>
+
+            {/* Instructor Info (for learners) */}
+            {!isInstructor && selectedClass.instructorId && (
+              <div 
+                className="rounded-2xl p-6 border-2"
+                style={{
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  borderColor: 'rgba(139, 92, 246, 0.3)'
+                }}
+              >
+                <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Instructor
+                </h4>
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg"
+                    style={{
+                      background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)'
+                    }}
+                  >
+                    {selectedClass.instructorId.username?.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold">{selectedClass.instructorId.username}</p>
+                    <p className="text-gray-400 text-sm">{selectedClass.instructorId.email}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Students List (for instructors) */}
+            {isInstructor && (
+              <div 
+                className="rounded-2xl p-6 border-2"
+                style={{
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  borderColor: 'rgba(79, 70, 229, 0.3)'
+                }}
+              >
+                <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  Enrolled Students
+                </h4>
+                {selectedClass.learners && selectedClass.learners.length > 0 ? (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {selectedClass.learners.map((learner: any) => (
+                      <div 
+                        key={learner._id}
+                        className="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:scale-[1.02]"
+                        style={{
+                          backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                          border: '1px solid rgba(79, 70, 229, 0.2)'
+                        }}
+                      >
+                        <div 
+                          className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
+                          style={{
+                            background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)'
+                          }}
+                        >
+                          {learner.username?.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-white font-semibold">{learner.username}</p>
+                          <p className="text-gray-400 text-sm">{learner.email}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div 
+                      className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"
+                      style={{
+                        background: 'rgba(79, 70, 229, 0.2)',
+                        border: '2px solid rgba(79, 70, 229, 0.3)'
+                      }}
+                    >
+                      <svg className="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-400">No students enrolled yet</p>
+                    <p className="text-gray-500 text-sm mt-1">Share the class code to get students</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div 
+            className="p-6 border-t"
+            style={{
+              borderColor: 'rgba(139, 92, 246, 0.3)'
+            }}
+          >
+            <button
+              onClick={() => setSelectedClass(null)}
+              className="w-full px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105"
+              style={{
+                background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const SubmissionsViewer = ({ quiz }: { quiz: Quiz }) => {
     const [submissions, setSubmissions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -1542,6 +2219,15 @@ const Dashboard: React.FC = () => {
             )
           },
           { 
+            id: 'classes', 
+            label: 'My Classes',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            )
+          },
+          { 
             id: 'quizzes', 
             label: 'My Quizzes',
             icon: (
@@ -1577,6 +2263,15 @@ const Dashboard: React.FC = () => {
             icon: (
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            )
+          },
+          { 
+            id: 'classes', 
+            label: 'My Classes',
+            icon: (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             )
           },
@@ -2555,6 +3250,189 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
+        {activeView === 'classes' && (
+          <div className="space-y-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-3xl font-bold text-white mb-2">
+                  {user?.role === 'instructor' ? 'My Classes' : 'Joined Classes'}
+                </h2>
+                <p className="text-gray-400">
+                  {user?.role === 'instructor' 
+                    ? 'Manage your classes and share codes with students' 
+                    : 'View classes you have joined'}
+                </p>
+              </div>
+              {user?.role === 'instructor' ? (
+                <button 
+                  onClick={() => setShowCreateClassModal(true)} 
+                  className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                    boxShadow: '0 10px 30px rgba(52, 211, 153, 0.3)'
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create Class
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setShowJoinClassModal(true)} 
+                  className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                    boxShadow: '0 10px 30px rgba(79, 70, 229, 0.3)'
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Join Class
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {classes.map((classItem) => (
+                <div 
+                  key={classItem._id}
+                  className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    borderColor: 'rgba(139, 92, 246, 0.2)',
+                    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)'
+                  }}
+                >
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(79, 70, 229, 0.1) 100%)'
+                    }}
+                  />
+                  
+                  <div className="relative p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div 
+                        className="w-14 h-14 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                        style={{
+                          background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)'
+                        }}
+                      >
+                        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                      {user?.role === 'instructor' && (
+                        <div className="flex flex-col items-end gap-2">
+                          <span className="text-xs text-gray-400 font-medium">Class Code</span>
+                          <div 
+                            className="px-3 py-1.5 rounded-lg font-bold text-lg tracking-wider cursor-pointer hover:scale-105 transition-transform"
+                            style={{ 
+                              backgroundColor: 'rgba(52, 211, 153, 0.2)',
+                              border: '2px solid rgba(52, 211, 153, 0.4)',
+                              color: '#34D399'
+                            }}
+                            onClick={() => {
+                              navigator.clipboard.writeText(classItem.classCode);
+                              alert('Class code copied to clipboard!');
+                            }}
+                            title="Click to copy"
+                          >
+                            {classItem.classCode}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-violet-300 transition-colors">
+                      {classItem.name}
+                    </h3>
+                    <p className="text-gray-400 text-sm line-clamp-2 mb-4">
+                      {classItem.description || 'No description available'}
+                    </p>
+                    
+                    <div className="flex items-center gap-4 mb-4 text-sm">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <span>{classItem.learners?.length || 0} students</span>
+                      </div>
+                      {user?.role === 'learner' && classItem.instructorId && (
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          <span>{classItem.instructorId.username}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <button 
+                      onClick={() => setSelectedClass(classItem)}
+                      className="w-full px-4 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105"
+                      style={{
+                        background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                        boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                      }}
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {classes.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div 
+                  className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(79, 70, 229, 0.2) 100%)',
+                    border: '2px solid rgba(139, 92, 246, 0.3)'
+                  }}
+                >
+                  <svg className="w-12 h-12 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  {user?.role === 'instructor' ? 'No Classes Created Yet' : 'No Classes Joined Yet'}
+                </h3>
+                <p className="text-gray-400 text-center max-w-md mb-6">
+                  {user?.role === 'instructor' 
+                    ? 'Create your first class to organize students and quizzes'
+                    : 'Join a class using a class code from your instructor'}
+                </p>
+                {user?.role === 'instructor' ? (
+                  <button
+                    onClick={() => setShowCreateClassModal(true)}
+                    className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105"
+                    style={{
+                      background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                    }}
+                  >
+                    Create Your First Class
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowJoinClassModal(true)}
+                    className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105"
+                    style={{
+                      background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                      boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                    }}
+                  >
+                    Join Your First Class
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeView === 'analytics' && (
           <div className="space-y-8">
             {/* Page Header */}
@@ -3039,6 +3917,11 @@ const Dashboard: React.FC = () => {
 
       {/* AI Quiz Preview */}
       {showAIPreview && aiQuizData && <AIQuizPreview />}
+
+      {/* Class Modals */}
+      {showCreateClassModal && <CreateClassModal />}
+      {showJoinClassModal && <JoinClassModal />}
+      {selectedClass && <ClassDetailsModal />}
     </div>
   );
 };
