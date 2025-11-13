@@ -66,7 +66,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#10B981'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#34D399'}
             >
-              Get Started
+              Login
             </button>
           </div>
         </nav>

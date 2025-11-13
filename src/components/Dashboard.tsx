@@ -27,7 +27,7 @@ interface DashboardStats {
 }
 
 const Dashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAICreateModal, setShowAICreateModal] = useState(false);
@@ -44,7 +44,16 @@ const Dashboard: React.FC = () => {
     classId?: string;
   } | null>(null);
   const [showAIPreview, setShowAIPreview] = useState(false);
-  const [activeView, setActiveView] = useState<'home' | 'quizzes' | 'classes' | 'analytics' | 'settings'>('home');
+  const [activeView, setActiveView] = useState<'home' | 'quizzes' | 'classes' | 'analytics' | 'settings'>(() => {
+    // Load saved view from localStorage on initial render
+    if (typeof window !== 'undefined') {
+      const savedView = localStorage.getItem('dashboardActiveView');
+      if (savedView && ['home', 'quizzes', 'classes', 'analytics', 'settings'].includes(savedView)) {
+        return savedView as 'home' | 'quizzes' | 'classes' | 'analytics' | 'settings';
+      }
+    }
+    return 'home';
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
     totalQuizzes: 0,
@@ -60,12 +69,22 @@ const Dashboard: React.FC = () => {
   const [showCreateClassModal, setShowCreateClassModal] = useState(false);
   const [showJoinClassModal, setShowJoinClassModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<any>(null);
-  const [selectedClassFilter, setSelectedClassFilter] = useState<string>('all'); // 'all' or classId
+  const [selectedClassFilter, setSelectedClassFilter] = useState<string>(() => {
+    // Load saved class filter from localStorage on initial render
+    if (typeof window !== 'undefined') {
+      const savedFilter = localStorage.getItem('dashboardClassFilter');
+      return savedFilter || 'all';
+    }
+    return 'all';
+  });
   const [quizSubmissionCounts, setQuizSubmissionCounts] = useState<{ [quizId: string]: number }>({});
   const [learnerSubmissions, setLearnerSubmissions] = useState<{ [quizId: string]: any }>({});
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' } | null>(null);
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean;
     title: string;
@@ -80,17 +99,70 @@ const Dashboard: React.FC = () => {
   });
 
   useEffect(() => {
+    // Initial fetch
     fetchQuizzes();
     fetchStats();
     fetchClasses();
     fetchNotifications();
     fetchSubmissionCounts();
     fetchLearnerSubmissions();
-    
-    // Poll for new notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
   }, []);
+
+  // Separate effect for polling that checks modal state
+  useEffect(() => {
+    const checkModalState = () => {
+      return showAICreateModal || showAIPreview || selectedQuiz || viewingSubmissions || 
+             showCreateClassModal || showJoinClassModal || selectedClass || modalConfig.isOpen;
+    };
+    
+    // Real-time polling intervals - pause when modals are open
+    const notificationInterval = setInterval(() => {
+      if (!checkModalState()) {
+        fetchNotifications();
+      }
+    }, 10000); // Every 10 seconds
+    
+    const quizInterval = setInterval(() => {
+      if (!checkModalState()) {
+        fetchQuizzes(true);
+      }
+    }, 15000); // Every 15 seconds
+    
+    const classInterval = setInterval(() => {
+      if (!checkModalState()) {
+        fetchClasses();
+      }
+    }, 20000); // Every 20 seconds
+    
+    const submissionInterval = setInterval(() => {
+      if (!checkModalState()) {
+        if (user?.role === 'instructor') {
+          fetchSubmissionCounts();
+          fetchStats();
+        } else if (user?.role === 'learner') {
+          fetchLearnerSubmissions();
+          fetchStats();
+        }
+      }
+    }, 15000); // Every 15 seconds
+    
+    return () => {
+      clearInterval(notificationInterval);
+      clearInterval(quizInterval);
+      clearInterval(classInterval);
+      clearInterval(submissionInterval);
+    };
+  }, [user?.role, showAICreateModal, showAIPreview, selectedQuiz, viewingSubmissions, showCreateClassModal, showJoinClassModal, selectedClass, modalConfig.isOpen]);
+
+  // Save activeView to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('dashboardActiveView', activeView);
+  }, [activeView]);
+
+  // Save selectedClassFilter to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('dashboardClassFilter', selectedClassFilter);
+  }, [selectedClassFilter]);
 
   // Close notifications dropdown when clicking outside
   useEffect(() => {
@@ -259,8 +331,9 @@ const Dashboard: React.FC = () => {
     );
   };
 
-  const fetchQuizzes = async () => {
+  const fetchQuizzes = async (showSync = false) => {
     try {
+      if (showSync) setIsSyncing(true);
       const token = localStorage.getItem('token');
       const response = await fetch('/api/quizzes', {
         headers: {
@@ -270,13 +343,29 @@ const Dashboard: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setQuizzes(data.quizzes);
-        setStats(prev => ({ ...prev, totalQuizzes: data.quizzes.length }));
+        const newQuizzes = data.quizzes;
+        
+        // Check for new quizzes (only show toast if polling, not initial load)
+        if (showSync && quizzes.length > 0 && newQuizzes.length > quizzes.length) {
+          const newCount = newQuizzes.length - quizzes.length;
+          setToast({
+            message: `${newCount} new quiz${newCount > 1 ? 'es' : ''} available!`,
+            type: 'info'
+          });
+          setTimeout(() => setToast(null), 3000);
+        }
+        
+        setQuizzes(newQuizzes);
+        setStats(prev => ({ ...prev, totalQuizzes: newQuizzes.length }));
+        if (showSync) setLastSyncTime(new Date());
       }
     } catch (error) {
       console.error('Error fetching quizzes:', error);
     } finally {
       setLoading(false);
+      if (showSync) {
+        setTimeout(() => setIsSyncing(false), 500);
+      }
     }
   };
 
@@ -2938,6 +3027,27 @@ const Dashboard: React.FC = () => {
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-3">
+          {/* Real-time Sync Indicator */}
+          <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl" style={{
+            backgroundColor: 'rgba(79, 70, 229, 0.05)',
+            border: '1px solid rgba(79, 70, 229, 0.1)'
+          }}>
+            {isSyncing ? (
+              <>
+                <svg className="w-4 h-4 animate-spin text-indigo-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="text-xs text-indigo-400 font-medium">Syncing...</span>
+              </>
+            ) : (
+              <>
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                <span className="text-xs text-gray-400 font-medium">Live</span>
+              </>
+            )}
+          </div>
+          
           {/* Notifications */}
           <div className="relative hidden sm:block notifications-dropdown">
             <button 
@@ -4397,18 +4507,8 @@ const Dashboard: React.FC = () => {
 
                             if (response.ok) {
                               const data = await response.json();
-                              // Update the user in AuthContext by re-verifying token
-                              const verifyResponse = await fetch('/api/auth/verify', {
-                                headers: {
-                                  'Authorization': `Bearer ${token}`,
-                                },
-                              });
-                              
-                              if (verifyResponse.ok) {
-                                const verifyData = await verifyResponse.json();
-                                // The AuthContext will update automatically on next render
-                                window.location.reload(); // Reload to update all user references
-                              }
+                              // Update the user in AuthContext directly without reloading
+                              updateUser({ username: newUsername.trim() });
                               
                               showModal('Success', 'Username updated successfully!', 'success');
                               setEditingUsername(false);
@@ -4621,6 +4721,48 @@ const Dashboard: React.FC = () => {
         type={modalConfig.type}
         onConfirm={modalConfig.onConfirm}
       />
+
+      {/* Real-time Toast Notification */}
+      {toast && (
+        <div 
+          className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300"
+          style={{ maxWidth: '400px' }}
+        >
+          <div 
+            className="px-6 py-4 rounded-2xl shadow-2xl border-2 backdrop-blur-xl flex items-center gap-3"
+            style={{
+              background: toast.type === 'success' 
+                ? 'rgba(52, 211, 153, 0.95)' 
+                : 'rgba(79, 70, 229, 0.95)',
+              borderColor: toast.type === 'success' 
+                ? 'rgba(52, 211, 153, 0.3)' 
+                : 'rgba(79, 70, 229, 0.3)',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)'
+            }}
+          >
+            <div className="flex-shrink-0">
+              {toast.type === 'success' ? (
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+            </div>
+            <p className="text-white font-semibold flex-1">{toast.message}</p>
+            <button
+              onClick={() => setToast(null)}
+              className="flex-shrink-0 text-white hover:text-gray-200 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
