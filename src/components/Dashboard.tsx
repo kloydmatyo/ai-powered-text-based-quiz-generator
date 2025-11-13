@@ -59,6 +59,7 @@ const Dashboard: React.FC = () => {
   const [showCreateClassModal, setShowCreateClassModal] = useState(false);
   const [showJoinClassModal, setShowJoinClassModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<any>(null);
+  const [selectedClassFilter, setSelectedClassFilter] = useState<string>('all'); // 'all' or classId
 
   useEffect(() => {
     fetchQuizzes();
@@ -1825,16 +1826,37 @@ const Dashboard: React.FC = () => {
               borderColor: 'rgba(139, 92, 246, 0.3)'
             }}
           >
-            <button
-              onClick={() => setSelectedClass(null)}
-              className="w-full px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105"
-              style={{
-                background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
-                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
-              }}
-            >
-              Close
-            </button>
+            <div className="flex gap-3">
+              {!isInstructor && selectedClass.quizzes && selectedClass.quizzes.length > 0 && (
+                <button
+                  onClick={() => {
+                    setSelectedClassFilter(selectedClass._id);
+                    setActiveView('quizzes');
+                    setSelectedClass(null);
+                  }}
+                  className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                    boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  View Quizzes ({selectedClass.quizzes.length})
+                </button>
+              )}
+              <button
+                onClick={() => setSelectedClass(null)}
+                className={`px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 ${!isInstructor && selectedClass.quizzes && selectedClass.quizzes.length > 0 ? '' : 'w-full'}`}
+                style={{
+                  background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -3167,8 +3189,12 @@ const Dashboard: React.FC = () => {
           <div className="space-y-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-3xl font-bold text-white mb-2">My Quizzes</h2>
-                <p className="text-gray-400">Manage and organize your quizzes</p>
+                <h2 className="text-3xl font-bold text-white mb-2">
+                  {user?.role === 'instructor' ? 'My Quizzes' : 'Available Quizzes'}
+                </h2>
+                <p className="text-gray-400">
+                  {user?.role === 'instructor' ? 'Manage and organize your quizzes' : 'Browse quizzes from your classes'}
+                </p>
               </div>
               {user?.role === 'instructor' && (
                 <button 
@@ -3186,9 +3212,72 @@ const Dashboard: React.FC = () => {
                 </button>
               )}
             </div>
+
+            {/* Class Filter Tabs for Learners */}
+            {user?.role === 'learner' && classes.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                <button
+                  onClick={() => setSelectedClassFilter('all')}
+                  className="px-4 py-2 rounded-xl font-semibold text-sm whitespace-nowrap transition-all duration-200 hover:scale-105"
+                  style={{
+                    background: selectedClassFilter === 'all'
+                      ? 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)'
+                      : 'rgba(79, 70, 229, 0.1)',
+                    border: selectedClassFilter === 'all'
+                      ? '2px solid rgba(79, 70, 229, 0.6)'
+                      : '2px solid rgba(79, 70, 229, 0.3)',
+                    color: selectedClassFilter === 'all' ? '#FFFFFF' : '#A5B4FC',
+                    boxShadow: selectedClassFilter === 'all' ? '0 4px 12px rgba(79, 70, 229, 0.3)' : 'none'
+                  }}
+                >
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    All Classes
+                  </span>
+                </button>
+                {classes.map((classItem) => (
+                  <button
+                    key={classItem._id}
+                    onClick={() => setSelectedClassFilter(classItem._id)}
+                    className="px-4 py-2 rounded-xl font-semibold text-sm whitespace-nowrap transition-all duration-200 hover:scale-105"
+                    style={{
+                      background: selectedClassFilter === classItem._id
+                        ? 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)'
+                        : 'rgba(139, 92, 246, 0.1)',
+                      border: selectedClassFilter === classItem._id
+                        ? '2px solid rgba(139, 92, 246, 0.6)'
+                        : '2px solid rgba(139, 92, 246, 0.3)',
+                      color: selectedClassFilter === classItem._id ? '#FFFFFF' : '#C4B5FD',
+                      boxShadow: selectedClassFilter === classItem._id ? '0 4px 12px rgba(139, 92, 246, 0.3)' : 'none'
+                    }}
+                  >
+                    <span className="flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      {classItem.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {quizzes.map((quiz) => (
+              {quizzes
+                .filter((quiz) => {
+                  // For instructors, show all their quizzes
+                  if (user?.role === 'instructor') return true;
+                  
+                  // For learners, filter by selected class
+                  if (selectedClassFilter === 'all') return true;
+                  
+                  // Check if quiz belongs to selected class
+                  const selectedClass = classes.find(c => c._id === selectedClassFilter);
+                  return selectedClass?.quizzes?.includes(quiz._id);
+                })
+                .map((quiz) => (
                 <div 
                   key={quiz._id}
                   className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
@@ -3224,9 +3313,31 @@ const Dashboard: React.FC = () => {
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">
                       {quiz.title}
                     </h3>
-                    <p className="text-gray-400 text-sm line-clamp-2 mb-4">
+                    <p className="text-gray-400 text-sm line-clamp-2 mb-2">
                       {quiz.description || 'No description available'}
                     </p>
+                    
+                    {/* Class badge for learners */}
+                    {user?.role === 'learner' && (
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        {classes
+                          .filter(c => c.quizzes?.includes(quiz._id))
+                          .map(classItem => (
+                            <span 
+                              key={classItem._id}
+                              className="text-xs font-semibold px-2 py-1 rounded-lg"
+                              style={{
+                                background: 'rgba(139, 92, 246, 0.2)',
+                                border: '1px solid rgba(139, 92, 246, 0.4)',
+                                color: '#C4B5FD'
+                              }}
+                            >
+                              📚 {classItem.name}
+                            </span>
+                          ))}
+                      </div>
+                    )}
+                    {user?.role === 'instructor' && <div className="mb-4"></div>}
                     
                     <div className="flex gap-2">
                       <button 
@@ -3291,12 +3402,18 @@ const Dashboard: React.FC = () => {
                   </svg>
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-2">
-                  {user?.role === 'instructor' ? 'No Quizzes Created Yet' : 'No Quizzes Available'}
+                  {user?.role === 'instructor' 
+                    ? 'No Quizzes Created Yet' 
+                    : selectedClassFilter !== 'all' 
+                      ? 'No Quizzes in This Class' 
+                      : 'No Quizzes Available'}
                 </h3>
                 <p className="text-gray-400 text-center max-w-md mb-6">
                   {user?.role === 'instructor' 
                     ? 'Create your first quiz to get started with QuizMate'
-                    : 'Join a class to access quizzes from your instructors'}
+                    : selectedClassFilter !== 'all'
+                      ? 'This class doesn\'t have any quizzes yet. Check back later or try another class.'
+                      : 'Join a class to access quizzes from your instructors'}
                 </p>
                 {user?.role === 'instructor' && (
                   <button
