@@ -474,10 +474,13 @@ A comprehensive quiz generation and management platform built with Next.js, Tail
 - **Progress Gradient**: `linear-gradient(90deg, #4F46E5 0%, #8B5CF6 50%, #34D399 100%)`
 
 ### Typography
-- **Font Family**: System fonts (sans-serif)
-- **Headings**: Bold, 2xl-5xl sizes
-- **Body**: Regular, base-lg sizes
-- **Labels**: Semibold, sm-base sizes
+- **Font Family**: Inter (Google Fonts, optimized by Next.js)
+- **Fallback Stack**: system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif
+- **Headings**: Bold (700), 2xl-5xl sizes (text-2xl to text-5xl)
+- **Body Text**: Regular (400), base-lg sizes (text-base to text-lg)
+- **Labels**: Semibold (600), sm-base sizes (text-sm to text-base)
+- **Small Text**: Regular (400), xs-sm sizes (text-xs to text-sm)
+- **Font Features**: Antialiased rendering for smooth appearance
 
 ### Components
 - **Buttons**: Rounded-xl, gradient backgrounds, hover scale effects
