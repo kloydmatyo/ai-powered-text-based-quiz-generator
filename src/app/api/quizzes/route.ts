@@ -116,8 +116,20 @@ export async function GET(request: NextRequest) {
         .sort({ createdAt: -1 })
         .populate('userId', 'username email');
     } else {
-      // Learners see all quizzes
-      quizzes = await Quiz.find({})
+      // Learners see only quizzes from classes they've joined
+      const Class = (await import('@/models/Class')).default;
+      
+      // Find all classes the learner has joined
+      const joinedClasses = await Class.find({ 
+        learners: auth.userId,
+        isActive: true 
+      }).select('quizzes');
+      
+      // Extract all quiz IDs from joined classes
+      const quizIds = joinedClasses.flatMap(c => c.quizzes);
+      
+      // Fetch only those quizzes
+      quizzes = await Quiz.find({ _id: { $in: quizIds } })
         .sort({ createdAt: -1 })
         .populate('userId', 'username email');
     }

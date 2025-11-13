@@ -40,6 +40,7 @@ const Dashboard: React.FC = () => {
     numberOfQuestions: number;
     questions: any[];
     sourceText: string;
+    classId?: string;
   } | null>(null);
   const [showAIPreview, setShowAIPreview] = useState(false);
   const [activeView, setActiveView] = useState<'home' | 'quizzes' | 'classes' | 'analytics' | 'settings'>('home');
@@ -164,6 +165,7 @@ const Dashboard: React.FC = () => {
     const [difficulty, setDifficulty] = useState<'easy' | 'moderate' | 'challenging'>('moderate');
     const [selectedQuestionTypes, setSelectedQuestionTypes] = useState<string[]>(['multiple-choice']);
     const [numberOfQuestions, setNumberOfQuestions] = useState<number>(10);
+    const [selectedClassId, setSelectedClassId] = useState<string>('');
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
       const uploadedFile = event.target.files?.[0];
@@ -293,7 +295,8 @@ const Dashboard: React.FC = () => {
           questionTypes: selectedQuestionTypes,
           numberOfQuestions,
           questions: limitedQuestions,
-          sourceText: text
+          sourceText: text,
+          classId: selectedClassId || undefined
         });
 
         setStep('preview');
@@ -448,6 +451,40 @@ const Dashboard: React.FC = () => {
                         </span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Class Selection */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-white mb-3">
+                      🏫 Assign to Class (Optional)
+                    </label>
+                    <select
+                      value={selectedClassId}
+                      onChange={(e) => setSelectedClassId(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl text-white focus:outline-none transition-all duration-200"
+                      style={{
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        border: '2px solid rgba(79, 70, 229, 0.3)'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#4F46E5';
+                        e.target.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.2)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'rgba(79, 70, 229, 0.3)';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    >
+                      <option value="" style={{ backgroundColor: '#0F172A' }}>No class (Personal quiz)</option>
+                      {classes.map((classItem) => (
+                        <option key={classItem._id} value={classItem._id} style={{ backgroundColor: '#0F172A' }}>
+                          {classItem.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Select a class to make this quiz available to students, or leave unselected for personal use
+                    </p>
                   </div>
 
                   {/* Settings Grid - Two columns on larger screens */}
@@ -755,6 +792,21 @@ const Dashboard: React.FC = () => {
           });
         }
 
+        // If a class was selected, add the quiz to that class
+        if (aiQuizData?.classId) {
+          await fetch(`/api/classes/${aiQuizData.classId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              addQuiz: quizId
+            }),
+          });
+          await fetchClasses(); // Refresh classes list
+        }
+
         // Refresh quiz list
         await fetchQuizzes();
         
@@ -804,7 +856,20 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-white">Quiz Preview</h3>
-                  <p className="text-sm text-gray-400">Review and edit before saving</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-gray-400">Review and edit before saving</p>
+                    {aiQuizData?.classId && (
+                      <span 
+                        className="px-3 py-1 rounded-lg text-xs font-semibold"
+                        style={{
+                          background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                          color: 'white'
+                        }}
+                      >
+                        📚 {classes.find(c => c._id === aiQuizData.classId)?.name || 'Class'}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <button
@@ -3013,7 +3078,7 @@ const Dashboard: React.FC = () => {
                   <p className="text-gray-400 text-center max-w-md mb-6">
                     {user?.role === 'instructor' 
                       ? 'Create your first quiz to get started with QuizMate'
-                      : 'Check back later for new quizzes from your instructors'}
+                      : 'Join a class to access quizzes from your instructors'}
                   </p>
                   {user?.role === 'instructor' && (
                     <button
@@ -3231,7 +3296,7 @@ const Dashboard: React.FC = () => {
                 <p className="text-gray-400 text-center max-w-md mb-6">
                   {user?.role === 'instructor' 
                     ? 'Create your first quiz to get started with QuizMate'
-                    : 'Check back later for new quizzes from your instructors'}
+                    : 'Join a class to access quizzes from your instructors'}
                 </p>
                 {user?.role === 'instructor' && (
                   <button

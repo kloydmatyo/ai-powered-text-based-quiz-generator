@@ -29,7 +29,23 @@ export async function GET(
       quiz = await Quiz.findOne({ _id: id, userId: auth.userId })
         .populate('userId', 'username email');
     } else {
-      // Learners can see any quiz
+      // Learners can only see quizzes from classes they've joined
+      const Class = (await import('@/models/Class')).default;
+      
+      // Find if the learner has access to this quiz through any joined class
+      const hasAccess = await Class.findOne({
+        learners: auth.userId,
+        quizzes: id,
+        isActive: true
+      });
+      
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'You do not have access to this quiz' },
+          { status: 403 }
+        );
+      }
+      
       quiz = await Quiz.findById(id)
         .populate('userId', 'username email');
     }

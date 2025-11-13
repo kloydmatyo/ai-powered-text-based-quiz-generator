@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/auth-middleware';
 import dbConnect from '@/lib/mongodb';
 import Class from '@/models/Class';
-import Quiz from '@/models/Quiz';
 
 // GET - Get class details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { classId: string } }
+  { params }: { params: Promise<{ classId: string }> }
 ) {
   try {
     const authResult = await authenticateRequest(request);
@@ -15,9 +14,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { classId } = await params;
     await dbConnect();
 
-    const classData = await Class.findById(params.classId)
+    const classData = await Class.findById(classId)
       .populate('instructorId', 'username email')
       .populate('learners', 'username email')
       .populate('quizzes');
@@ -44,7 +44,7 @@ export async function GET(
 // PUT - Update class (instructor only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { classId: string } }
+  { params }: { params: Promise<{ classId: string }> }
 ) {
   try {
     const authResult = await authenticateRequest(request);
@@ -52,9 +52,10 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { classId } = await params;
     await dbConnect();
 
-    const classData = await Class.findById(params.classId);
+    const classData = await Class.findById(classId);
     if (!classData) {
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
     }
@@ -64,11 +65,23 @@ export async function PUT(
       return NextResponse.json({ error: 'Only the instructor can update this class' }, { status: 403 });
     }
 
-    const { name, description, isActive } = await request.json();
+    const { name, description, isActive, addQuiz, removeQuiz } = await request.json();
 
     if (name !== undefined) classData.name = name.trim();
     if (description !== undefined) classData.description = description.trim();
     if (isActive !== undefined) classData.isActive = isActive;
+    
+    // Add quiz to class
+    if (addQuiz !== undefined) {
+      if (!classData.quizzes.includes(addQuiz)) {
+        classData.quizzes.push(addQuiz);
+      }
+    }
+    
+    // Remove quiz from class
+    if (removeQuiz !== undefined) {
+      classData.quizzes = classData.quizzes.filter((qId: any) => qId.toString() !== removeQuiz);
+    }
 
     await classData.save();
 
@@ -89,7 +102,7 @@ export async function PUT(
 // DELETE - Delete class (instructor only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { classId: string } }
+  { params }: { params: Promise<{ classId: string }> }
 ) {
   try {
     const authResult = await authenticateRequest(request);
@@ -97,9 +110,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { classId } = await params;
     await dbConnect();
 
-    const classData = await Class.findById(params.classId);
+    const classData = await Class.findById(classId);
     if (!classData) {
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
     }
@@ -109,7 +123,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Only the instructor can delete this class' }, { status: 403 });
     }
 
-    await Class.findByIdAndDelete(params.classId);
+    await Class.findByIdAndDelete(classId);
 
     return NextResponse.json({ message: 'Class deleted successfully' }, { status: 200 });
   } catch (error) {
