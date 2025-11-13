@@ -364,34 +364,78 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
 
   // Quiz Taking View
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top Bar */}
-      <div className="bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
+    <div className="min-h-screen" style={{ backgroundColor: '#0F172A' }}>
+      {/* Modern Top Bar */}
+      <div 
+        className="border-b-2 backdrop-blur-xl sticky top-0 z-50"
+        style={{
+          background: 'rgba(15, 23, 42, 0.95)',
+          borderColor: 'rgba(79, 70, 229, 0.3)',
+          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)'
+        }}
+      >
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+          <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
             {/* Quiz Title */}
-            <h1 className="text-lg md:text-xl font-bold text-white truncate">{quiz.title}</h1>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={onBack}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                style={{
+                  color: '#A5B4FC',
+                  backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                  border: '2px solid rgba(79, 70, 229, 0.3)'
+                }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back
+              </button>
+              <h1 className="text-xl md:text-2xl font-bold text-white">{quiz.title}</h1>
+            </div>
             
             {/* Progress & Timer */}
-            <div className="flex items-center gap-4">
-              <div className="text-gray-300 text-sm md:text-base font-medium">
-                Question {currentQuestionIndex + 1} of {questions.length}
+            <div className="flex items-center gap-3">
+              <div 
+                className="px-4 py-2 rounded-xl font-semibold text-sm md:text-base"
+                style={{
+                  backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                  border: '2px solid rgba(139, 92, 246, 0.3)',
+                  color: '#A78BFA'
+                }}
+              >
+                {currentQuestionIndex + 1} / {questions.length}
               </div>
               {!submitted && !alreadyCompleted && (
-                <div className={`px-4 py-2 rounded-lg font-bold text-sm md:text-base ${
-                  timeRemaining < 300 ? 'bg-red-500/20 text-red-400' : 'bg-primary/20 text-primary'
-                }`}>
-                  ⏱️ {formatTime(timeRemaining)}
+                <div 
+                  className="px-4 py-2 rounded-xl font-bold text-sm md:text-base flex items-center gap-2"
+                  style={{
+                    backgroundColor: timeRemaining < 300 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(79, 70, 229, 0.2)',
+                    border: timeRemaining < 300 ? '2px solid rgba(239, 68, 68, 0.4)' : '2px solid rgba(79, 70, 229, 0.3)',
+                    color: timeRemaining < 300 ? '#F87171' : '#A5B4FC'
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {formatTime(timeRemaining)}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Progress Bar */}
-          <div className="mt-4 h-2 bg-gray-800 rounded-full overflow-hidden">
+          {/* Modern Progress Bar */}
+          <div 
+            className="h-3 rounded-full overflow-hidden"
+            style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)' }}
+          >
             <div 
-              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
+              className="h-full transition-all duration-500 ease-out"
+              style={{ 
+                width: `${progress}%`,
+                background: 'linear-gradient(90deg, #4F46E5 0%, #8B5CF6 50%, #34D399 100%)'
+              }}
             />
           </div>
         </div>
@@ -400,55 +444,116 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
       {/* Main Question Area */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12">
         {alreadyCompleted && (
-          <div className="mb-6 p-4 bg-blue-500/20 border-2 border-blue-500 rounded-xl">
-            <p className="text-blue-200 text-center font-semibold">
-              ✓ You have already completed this quiz. Reviewing your submission.
-            </p>
+          <div 
+            className="mb-8 p-6 rounded-2xl border-2"
+            style={{
+              backgroundColor: 'rgba(79, 70, 229, 0.1)',
+              borderColor: 'rgba(79, 70, 229, 0.4)',
+              boxShadow: '0 8px 24px rgba(79, 70, 229, 0.2)'
+            }}
+          >
+            <div className="flex items-center gap-3 justify-center">
+              <svg className="w-6 h-6 text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="text-indigo-200 text-center font-semibold text-lg">
+                You have already completed this quiz. Reviewing your submission.
+              </p>
+            </div>
           </div>
         )}
 
         {currentQuestion && (
           <div className="space-y-8">
-            {/* Question Card */}
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-10 border border-gray-700 shadow-2xl">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+            {/* Modern Question Card */}
+            <div 
+              className="rounded-3xl p-8 md:p-12 border-2"
+              style={{
+                background: 'rgba(15, 23, 42, 0.6)',
+                borderColor: 'rgba(79, 70, 229, 0.3)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 20px 50px rgba(0, 0, 0, 0.3)'
+              }}
+            >
+              <div className="flex items-start gap-6 mb-8">
+                <div 
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-2xl flex-shrink-0"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                    boxShadow: '0 8px 24px rgba(79, 70, 229, 0.3)'
+                  }}
+                >
                   {currentQuestionIndex + 1}
                 </div>
                 <div className="flex-1">
-                  <span className="text-xs font-semibold text-secondary uppercase tracking-wider">
+                  <span 
+                    className="inline-block text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-lg mb-3"
+                    style={{
+                      backgroundColor: currentQuestion.questionType === 'fill-in-blank' ? 'rgba(52, 211, 153, 0.2)' :
+                                      currentQuestion.questionType === 'true-false' ? 'rgba(139, 92, 246, 0.2)' :
+                                      'rgba(79, 70, 229, 0.2)',
+                      color: currentQuestion.questionType === 'fill-in-blank' ? '#34D399' :
+                             currentQuestion.questionType === 'true-false' ? '#A78BFA' :
+                             '#A5B4FC'
+                    }}
+                  >
                     {currentQuestion.questionType === 'fill-in-blank' ? 'Fill in the Blank' :
                      currentQuestion.questionType === 'true-false' ? 'True or False' :
                      'Multiple Choice'}
                   </span>
-                  <h2 className="text-2xl md:text-3xl font-bold text-white mt-2 leading-relaxed">
+                  <h2 className="text-2xl md:text-4xl font-bold text-white leading-relaxed">
                     {currentQuestion.questionText}
                   </h2>
                 </div>
               </div>
 
               {/* Answer Options */}
-              <div className="space-y-3 md:space-y-4">
+              <div className="space-y-4">
                 {currentQuestion.questionType === 'fill-in-blank' ? (
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     <input
                       type="text"
                       value={(userAnswers[currentQuestion._id] as string) || ''}
                       onChange={(e) => setUserAnswers({ ...userAnswers, [currentQuestion._id]: e.target.value })}
                       disabled={submitted || alreadyCompleted}
                       placeholder="Type your answer here..."
-                      className="w-full px-6 py-4 bg-gray-900 border-2 border-gray-700 rounded-xl text-white text-lg placeholder-gray-500 focus:border-primary focus:outline-none transition-colors disabled:opacity-50"
+                      className="w-full px-6 py-5 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none transition-all duration-200 disabled:opacity-50"
+                      style={{
+                        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                        borderWidth: '2px',
+                        borderStyle: 'solid',
+                        borderColor: 'rgba(79, 70, 229, 0.3)',
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#4F46E5';
+                        e.target.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = 'rgba(79, 70, 229, 0.3)';
+                        e.target.style.boxShadow = 'none';
+                      }}
                       autoFocus
                     />
                     {userAnswers[currentQuestion._id] && (userAnswers[currentQuestion._id] as string).trim() !== '' && (
-                      <div className="flex items-center gap-2 text-accent text-sm">
-                        <span>✓</span>
-                        <span>Answer entered ({(userAnswers[currentQuestion._id] as string).length} characters)</span>
+                      <div 
+                        className="flex items-center gap-2 px-4 py-3 rounded-xl"
+                        style={{
+                          backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                          border: '2px solid rgba(52, 211, 153, 0.3)'
+                        }}
+                      >
+                        <svg className="w-5 h-5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-emerald-300 font-medium">Answer entered ({(userAnswers[currentQuestion._id] as string).length} characters)</span>
                       </div>
                     )}
                     {!submitted && !alreadyCompleted && (
-                      <p className="text-gray-400 text-sm">
-                        💡 Tip: Type your answer and click "Next" to continue
+                      <p className="text-gray-400 text-sm flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                        Type your answer and click "Next" to continue
                       </p>
                     )}
                   </div>
@@ -460,100 +565,162 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
                         key={idx}
                         onClick={() => !submitted && !alreadyCompleted && setUserAnswers({ ...userAnswers, [currentQuestion._id]: idx })}
                         disabled={submitted || alreadyCompleted}
-                        className={`w-full text-left p-4 md:p-6 rounded-xl border-2 transition-all duration-200 ${
-                          isSelected
-                            ? 'bg-primary/20 border-primary text-white shadow-lg scale-[1.02]'
-                            : 'bg-gray-900 border-gray-700 text-gray-300 hover:border-gray-600 hover:bg-gray-800'
-                        } ${submitted || alreadyCompleted ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                        className="w-full text-left p-6 rounded-2xl border-2 transition-all duration-200 disabled:cursor-not-allowed"
+                        style={{
+                          backgroundColor: isSelected ? 'rgba(79, 70, 229, 0.2)' : 'rgba(30, 41, 59, 0.5)',
+                          borderColor: isSelected ? '#4F46E5' : 'rgba(79, 70, 229, 0.2)',
+                          transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                          boxShadow: isSelected ? '0 8px 24px rgba(79, 70, 229, 0.3)' : 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected && !submitted && !alreadyCompleted) {
+                            e.currentTarget.style.borderColor = 'rgba(79, 70, 229, 0.4)';
+                            e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.7)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.borderColor = 'rgba(79, 70, 229, 0.2)';
+                            e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.5)';
+                          }
+                        }}
                       >
                         <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg ${
-                            isSelected ? 'bg-primary text-white' : 'bg-gray-800 text-gray-400'
-                          }`}>
+                          <div 
+                            className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg flex-shrink-0"
+                            style={{
+                              backgroundColor: isSelected ? 'rgba(79, 70, 229, 0.3)' : 'rgba(79, 70, 229, 0.1)',
+                              color: isSelected ? '#A5B4FC' : '#6B7280'
+                            }}
+                          >
                             {String.fromCharCode(65 + idx)}
                           </div>
-                          <span className="text-base md:text-lg flex-1">{choice}</span>
-                          {isSelected && <span className="text-2xl">✓</span>}
+                          <span className={`text-lg ${isSelected ? 'text-white font-semibold' : 'text-gray-300'}`}>
+                            {choice}
+                          </span>
+                          {isSelected && (
+                            <svg className="w-6 h-6 text-indigo-400 ml-auto" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          )}
                         </div>
                       </button>
                     );
                   })
                 )}
               </div>
-            </div>
 
-            {/* Navigation Buttons */}
-            {!submitted && !alreadyCompleted && (
-              <div className="flex items-center justify-between gap-4">
-                <button
-                  onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-                  disabled={currentQuestionIndex === 0}
-                  className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  ← Previous
-                </button>
-
-                <button
-                  onClick={onBack}
-                  className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl font-medium transition-colors"
-                >
-                  Quit
-                </button>
-
-                {isLastQuestion ? (
+              {/* Navigation Buttons */}
+              <div className="flex gap-4 mt-8">
+                {currentQuestionIndex > 0 && (
                   <button
-                    onClick={() => setShowConfirmSubmit(true)}
-                    disabled={!allQuestionsAnswered}
-                    className="px-8 py-3 bg-accent hover:bg-accent/90 text-white rounded-xl font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+                    disabled={submitted || alreadyCompleted}
+                    className="px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                      border: '2px solid rgba(139, 92, 246, 0.3)',
+                      color: '#A78BFA'
+                    }}
                   >
-                    Submit Quiz →
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Previous
+                  </button>
+                )}
+                
+                {currentQuestionIndex < questions.length - 1 ? (
+                  <button
+                    onClick={() => setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1))}
+                    disabled={submitted || alreadyCompleted}
+                    className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
+                      boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                    }}
+                  >
+                    Next
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </button>
                 ) : (
                   <button
-                    onClick={() => setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                    className="px-8 py-3 bg-accent hover:bg-accent/90 text-white rounded-xl font-bold shadow-lg transition-all"
+                    onClick={() => setShowConfirmSubmit(true)}
+                    disabled={submitted || alreadyCompleted}
+                    className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                      boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+                    }}
                   >
-                    Next →
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Submit Quiz
                   </button>
                 )}
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>
 
       {/* Confirm Submit Modal */}
       {showConfirmSubmit && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-2xl p-8 max-w-md w-full border border-gray-700 shadow-2xl">
-            <div className="text-center">
-              <div className="text-5xl mb-4">🎯</div>
-              <h3 className="text-2xl font-bold text-white mb-4">Submit Quiz?</h3>
-              <p className="text-gray-300 mb-6">
-                You have answered {questions.filter(q => {
-                  const answer = userAnswers[q._id];
-                  return answer !== undefined && answer !== null && !(typeof answer === 'string' && answer.trim() === '');
-                }).length} out of {questions.length} questions.
-                {!allQuestionsAnswered && (
-                  <span className="block mt-2 text-yellow-400">
-                    ⚠️ Some questions are unanswered or have empty answers!
-                  </span>
-                )}
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowConfirmSubmit(false)}
-                  className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-semibold transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  className="flex-1 px-6 py-3 bg-accent hover:bg-accent/90 text-white rounded-xl font-bold transition-colors"
-                >
-                  Submit
-                </button>
+        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div 
+            className="rounded-3xl p-8 max-w-md w-full border-2 shadow-2xl"
+            style={{
+              background: 'rgba(15, 23, 42, 0.95)',
+              borderColor: 'rgba(52, 211, 153, 0.4)',
+              boxShadow: '0 25px 50px rgba(52, 211, 153, 0.2)'
+            }}
+          >
+            <div className="flex items-center gap-4 mb-6">
+              <div 
+                className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                style={{
+                  background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)'
+                }}
+              >
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
+              <h3 className="text-2xl font-bold text-white">Submit Quiz?</h3>
+            </div>
+            
+            <p className="text-gray-300 mb-6 leading-relaxed">
+              Are you sure you want to submit your quiz? You won't be able to change your answers after submission.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmSubmit(false)}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                style={{
+                  backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                  border: '2px solid rgba(139, 92, 246, 0.3)',
+                  color: '#A78BFA'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirmSubmit(false);
+                  handleSubmit();
+                }}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105"
+                style={{
+                  background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                  boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
+                }}
+              >
+                Submit
+              </button>
             </div>
           </div>
         </div>
