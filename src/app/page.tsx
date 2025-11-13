@@ -32,5 +32,5 @@ export default function Home() {
     return <RegisterForm onSwitchToLogin={() => setView('login')} />;
   }
 
-  return <LandingPage onGetStarted={() => setView('register')} />;
+  return <LandingPage onGetStarted={() => setView('login')} />;
 }
