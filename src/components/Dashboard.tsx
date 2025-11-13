@@ -925,64 +925,344 @@ const Dashboard: React.FC = () => {
       <main className="pt-20 md:pt-24 pb-8 px-4 sm:px-6 md:px-8 transition-all duration-300 md:ml-0" 
         style={{ marginLeft: window.innerWidth >= 768 ? (sidebarCollapsed ? '5rem' : '16rem') : '0' }}>
         {activeView === 'home' && (
-          <div className="space-y-6">
-            <div className="bg-gradient-to-r from-primary to-secondary rounded-xl p-6 md:p-8 text-white">
-              <h2 className="text-2xl md:text-3xl font-bold mb-2">Welcome back, {user?.username}! 👋</h2>
-              <p className="text-sm md:text-base text-blue-100">
-                {user?.role === 'instructor' ? 'Ready to create amazing quizzes today?' : 'Ready to take some quizzes today?'}
-              </p>
+          <div className="space-y-8">
+            {/* Welcome Banner */}
+            <div 
+              className="relative overflow-hidden rounded-3xl p-8 md:p-10 border-2"
+              style={{
+                background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
+                borderColor: 'rgba(79, 70, 229, 0.3)',
+                boxShadow: '0 20px 50px rgba(79, 70, 229, 0.2)'
+              }}
+            >
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-500/20 to-violet-500/20 rounded-full blur-3xl" />
+              <div className="relative">
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                  Welcome back, {user?.username}! 👋
+                </h2>
+                <p className="text-lg text-gray-300">
+                  {user?.role === 'instructor' ? 'Ready to create amazing quizzes today?' : 'Ready to take some quizzes today?'}
+                </p>
+              </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-              <StatsCard icon="📝" label="Total Quizzes" value={stats.totalQuizzes} trend={12} color="from-primary to-blue-600" />
-              <StatsCard icon="🎯" label="Total Plays" value={stats.totalPlays} trend={8} color="from-secondary to-purple-600" />
-              <StatsCard icon="⭐" label="Average Score" value={`${stats.averageScore}%`} trend={5} color="from-accent to-green-600" />
-              <StatsCard icon="📈" label="Engagement" value={`${stats.engagement}%`} trend={-3} color="from-orange-500 to-red-500" />
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Total Quizzes */}
+              <div 
+                className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
+                  borderColor: 'rgba(79, 70, 229, 0.3)',
+                  boxShadow: '0 8px 32px rgba(79, 70, 229, 0.15)'
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-violet-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-400">
+                      <span>↑</span>
+                      <span>12%</span>
+                    </div>
+                  </div>
+                  <p className="text-gray-400 text-sm font-medium mb-1">Total Quizzes</p>
+                  <p className="text-white text-3xl font-bold">{stats.totalQuizzes}</p>
+                </div>
+              </div>
+
+              {/* Total Plays */}
+              <div 
+                className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%)',
+                  borderColor: 'rgba(139, 92, 246, 0.3)',
+                  boxShadow: '0 8px 32px rgba(139, 92, 246, 0.15)'
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center text-violet-400 group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-400">
+                      <span>↑</span>
+                      <span>8%</span>
+                    </div>
+                  </div>
+                  <p className="text-gray-400 text-sm font-medium mb-1">Total Plays</p>
+                  <p className="text-white text-3xl font-bold">{stats.totalPlays}</p>
+                </div>
+              </div>
+
+              {/* Average Score */}
+              <div 
+                className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)',
+                  borderColor: 'rgba(52, 211, 153, 0.3)',
+                  boxShadow: '0 8px 32px rgba(52, 211, 153, 0.15)'
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-green-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-400">
+                      <span>↑</span>
+                      <span>5%</span>
+                    </div>
+                  </div>
+                  <p className="text-gray-400 text-sm font-medium mb-1">Average Score</p>
+                  <p className="text-white text-3xl font-bold">{stats.averageScore}%</p>
+                </div>
+              </div>
+
+              {/* Engagement */}
+              <div 
+                className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%)',
+                  borderColor: 'rgba(79, 70, 229, 0.3)',
+                  boxShadow: '0 8px 32px rgba(79, 70, 229, 0.15)'
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-400">
+                      <span>↑</span>
+                      <span>15%</span>
+                    </div>
+                  </div>
+                  <p className="text-gray-400 text-sm font-medium mb-1">Engagement</p>
+                  <p className="text-white text-3xl font-bold">{stats.engagement}%</p>
+                </div>
+              </div>
             </div>
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-white">Recent Quizzes</h3>
-                <button onClick={() => setActiveView('quizzes')} className="text-primary hover:text-primary/80 text-sm font-medium">
-                  View All →
+            {/* Recent Quizzes */}
+            <div 
+              className="rounded-3xl p-8 border-2"
+              style={{
+                background: 'rgba(15, 23, 42, 0.6)',
+                borderColor: 'rgba(79, 70, 229, 0.2)',
+                backdropFilter: 'blur(20px)'
+              }}
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-2xl font-bold text-white">Recent Quizzes</h3>
+                <button 
+                  onClick={() => setActiveView('quizzes')} 
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                  style={{
+                    color: '#A5B4FC',
+                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                    border: '2px solid rgba(79, 70, 229, 0.3)'
+                  }}
+                >
+                  View All
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {quizzes.slice(0, 6).map((quiz) => (
-                  <div key={quiz._id} className="bg-gray-900 rounded-lg p-4 border border-gray-700 hover:border-primary transition-all cursor-pointer group"
-                    onClick={() => setSelectedQuiz(quiz)}>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-2xl">📋</div>
-                      <span className="text-xs text-gray-400">{new Date(quiz.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <h4 className="text-white font-semibold mb-1 group-hover:text-primary transition-colors">{quiz.title}</h4>
-                    <p className="text-gray-400 text-sm line-clamp-2 mb-3">{quiz.description || 'No description'}</p>
-                    <div className="flex gap-2">
-                      <button className="flex-1 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs rounded-lg transition-colors">
-                        {user?.role === 'instructor' ? 'Edit' : 'Take'}
-                      </button>
-                      {user?.role === 'instructor' && (
-                        <button className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition-colors">📊</button>
-                      )}
+                  <div 
+                    key={quiz._id}
+                    className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl cursor-pointer"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.6)',
+                      borderColor: 'rgba(79, 70, 229, 0.2)',
+                      boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)'
+                    }}
+                    onClick={() => setSelectedQuiz(quiz)}
+                  >
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)'
+                      }}
+                    />
+                    
+                    <div className="relative p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div 
+                          className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                          style={{
+                            background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)'
+                          }}
+                        >
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <span className="text-xs text-gray-500 font-medium">
+                          {new Date(quiz.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      
+                      <h4 className="text-white font-bold text-lg mb-2 group-hover:text-indigo-300 transition-colors line-clamp-1">
+                        {quiz.title}
+                      </h4>
+                      <p className="text-gray-400 text-sm line-clamp-2 mb-4">
+                        {quiz.description || 'No description provided'}
+                      </p>
+                      
+                      <div className="flex gap-2">
+                        <button 
+                          className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105"
+                          style={{
+                            background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
+                            boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedQuiz(quiz);
+                          }}
+                        >
+                          {user?.role === 'instructor' ? 'Manage' : 'Take Quiz'}
+                        </button>
+                        {user?.role === 'instructor' && (
+                          <button 
+                            className="px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                            style={{
+                              backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                              border: '2px solid rgba(139, 92, 246, 0.3)',
+                              color: '#A78BFA'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingSubmissions(quiz);
+                            }}
+                            title="View Submissions"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
+              
+              {quizzes.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <div 
+                    className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
+                      border: '2px solid rgba(79, 70, 229, 0.3)'
+                    }}
+                  >
+                    <svg className="w-12 h-12 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    {user?.role === 'instructor' ? 'No Quizzes Created Yet' : 'No Quizzes Available'}
+                  </h3>
+                  <p className="text-gray-400 text-center max-w-md mb-6">
+                    {user?.role === 'instructor' 
+                      ? 'Create your first quiz to get started with QuizMate'
+                      : 'Check back later for new quizzes from your instructors'}
+                  </p>
+                  {user?.role === 'instructor' && (
+                    <button
+                      onClick={() => setShowAICreateModal(true)}
+                      className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105"
+                      style={{
+                        background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                        boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                      }}
+                    >
+                      Create Your First Quiz
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
+            {/* Quick Actions for Instructors */}
             {user?.role === 'instructor' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                <button onClick={() => setShowAICreateModal(true)} className="bg-gradient-to-br from-accent to-green-600 rounded-xl p-4 md:p-6 text-white hover:shadow-2xl transition-all group">
-                  <div className="text-3xl md:text-4xl mb-2 md:mb-3">🤖</div>
-                  <h4 className="text-base md:text-lg font-bold mb-1">AI Quiz Generator</h4>
-                  <p className="text-xs md:text-sm text-green-100">Create quizzes from documents</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <button 
+                  onClick={() => setShowAICreateModal(true)} 
+                  className="group relative overflow-hidden rounded-2xl p-8 text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                  style={{
+                    background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                    boxShadow: '0 10px 30px rgba(52, 211, 153, 0.3)'
+                  }}
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-xl font-bold mb-2">AI Quiz Generator</h4>
+                    <p className="text-emerald-100 text-sm">Create quizzes from documents instantly</p>
+                  </div>
                 </button>
-                <button onClick={() => setActiveView('analytics')} className="bg-gradient-to-br from-secondary to-purple-600 rounded-xl p-4 md:p-6 text-white hover:shadow-2xl transition-all">
-                  <div className="text-3xl md:text-4xl mb-2 md:mb-3">📊</div>
-                  <h4 className="text-base md:text-lg font-bold mb-1">View Analytics</h4>
-                  <p className="text-xs md:text-sm text-purple-100">Track quiz performance</p>
+
+                <button 
+                  onClick={() => setActiveView('analytics')} 
+                  className="group relative overflow-hidden rounded-2xl p-8 text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                  style={{
+                    background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                    boxShadow: '0 10px 30px rgba(139, 92, 246, 0.3)'
+                  }}
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-xl font-bold mb-2">View Analytics</h4>
+                    <p className="text-violet-100 text-sm">Track quiz performance and insights</p>
+                  </div>
                 </button>
-                <button onClick={() => setActiveView('settings')} className="bg-gradient-to-br from-primary to-blue-600 rounded-xl p-4 md:p-6 text-white hover:shadow-2xl transition-all">
-                  <div className="text-3xl md:text-4xl mb-2 md:mb-3">⚙️</div>
-                  <h4 className="text-base md:text-lg font-bold mb-1">Settings</h4>
-                  <p className="text-xs md:text-sm text-blue-100">Customize your experience</p>
+
+                <button 
+                  onClick={() => setActiveView('settings')} 
+                  className="group relative overflow-hidden rounded-2xl p-8 text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
+                    boxShadow: '0 10px 30px rgba(79, 70, 229, 0.3)'
+                  }}
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-xl font-bold mb-2">Settings</h4>
+                    <p className="text-indigo-100 text-sm">Customize your experience</p>
+                  </div>
                 </button>
               </div>
             )}
@@ -990,38 +1270,154 @@ const Dashboard: React.FC = () => {
         )}
 
         {activeView === 'quizzes' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white">My Quizzes</h2>
+          <div className="space-y-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-3xl font-bold text-white mb-2">My Quizzes</h2>
+                <p className="text-gray-400">Manage and organize your quizzes</p>
+              </div>
               {user?.role === 'instructor' && (
-                <button onClick={() => setShowAICreateModal(true)} className="px-6 py-3 bg-accent hover:bg-accent/90 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all">
-                  ➕ Create New Quiz
+                <button 
+                  onClick={() => setShowAICreateModal(true)} 
+                  className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+                  style={{
+                    background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+                    boxShadow: '0 10px 30px rgba(52, 211, 153, 0.3)'
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create New Quiz
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {quizzes.map((quiz) => (
-                <div key={quiz._id} className="bg-gray-800 rounded-xl p-4 md:p-6 border border-gray-700 hover:border-primary transition-all hover:shadow-xl">
-                  <div className="flex items-start justify-between mb-3 md:mb-4">
-                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-2xl md:text-3xl">📋</div>
-                    <span className="text-xs text-gray-400 bg-gray-900 px-2 py-1 rounded">{new Date(quiz.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  <h3 className="text-lg md:text-xl font-bold text-white mb-2">{quiz.title}</h3>
-                  <p className="text-gray-400 text-xs md:text-sm mb-3 md:mb-4 line-clamp-2">{quiz.description || 'No description available'}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={() => setSelectedQuiz(quiz)} className="flex-1 px-3 md:px-4 py-2 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-colors text-sm md:text-base">
-                      {user?.role === 'instructor' ? 'Manage' : 'Take Quiz'}
-                    </button>
-                    {user?.role === 'instructor' && (
-                      <>
-                        <button onClick={() => setViewingSubmissions(quiz)} className="px-3 md:px-4 py-2 bg-accent hover:bg-accent/90 text-white rounded-lg transition-colors text-sm md:text-base">📊</button>
-                        <button onClick={() => deleteQuiz(quiz._id)} className="px-3 md:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm md:text-base">🗑️</button>
-                      </>
-                    )}
+                <div 
+                  key={quiz._id}
+                  className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    borderColor: 'rgba(79, 70, 229, 0.2)',
+                    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)'
+                  }}
+                >
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)'
+                    }}
+                  />
+                  
+                  <div className="relative p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div 
+                        className="w-14 h-14 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                        style={{
+                          background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)'
+                        }}
+                      >
+                        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <span className="text-xs text-gray-500 font-medium px-3 py-1 rounded-lg" style={{ backgroundColor: 'rgba(79, 70, 229, 0.1)' }}>
+                        {new Date(quiz.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">
+                      {quiz.title}
+                    </h3>
+                    <p className="text-gray-400 text-sm line-clamp-2 mb-4">
+                      {quiz.description || 'No description available'}
+                    </p>
+                    
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setSelectedQuiz(quiz)}
+                        className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105"
+                        style={{
+                          background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
+                          boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                        }}
+                      >
+                        {user?.role === 'instructor' ? 'Manage' : 'Take Quiz'}
+                      </button>
+                      {user?.role === 'instructor' && (
+                        <>
+                          <button 
+                            onClick={() => setViewingSubmissions(quiz)}
+                            className="px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                            style={{
+                              backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                              border: '2px solid rgba(139, 92, 246, 0.3)',
+                              color: '#A78BFA'
+                            }}
+                            title="View Submissions"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                          </button>
+                          <button 
+                            onClick={() => deleteQuiz(quiz._id)}
+                            className="px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                            style={{
+                              backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                              border: '2px solid rgba(239, 68, 68, 0.3)',
+                              color: '#F87171'
+                            }}
+                            title="Delete Quiz"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
+            
+            {quizzes.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div 
+                  className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
+                    border: '2px solid rgba(79, 70, 229, 0.3)'
+                  }}
+                >
+                  <svg className="w-12 h-12 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  {user?.role === 'instructor' ? 'No Quizzes Created Yet' : 'No Quizzes Available'}
+                </h3>
+                <p className="text-gray-400 text-center max-w-md mb-6">
+                  {user?.role === 'instructor' 
+                    ? 'Create your first quiz to get started with QuizMate'
+                    : 'Check back later for new quizzes from your instructors'}
+                </p>
+                {user?.role === 'instructor' && (
+                  <button
+                    onClick={() => setShowAICreateModal(true)}
+                    className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105"
+                    style={{
+                      background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                      boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                    }}
+                  >
+                    Create Your First Quiz
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
