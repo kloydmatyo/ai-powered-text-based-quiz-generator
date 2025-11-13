@@ -17,6 +17,8 @@ interface Quiz {
   title: string;
   description: string;
   sourceText?: string;
+  deadline?: string;
+  timeLimit?: number;
 }
 
 interface QuestionManagerProps {
@@ -30,7 +32,17 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [editingQuiz, setEditingQuiz] = useState(false);
-  const [quizData, setQuizData] = useState({ title: quiz.title, description: quiz.description });
+  const [quizData, setQuizData] = useState<{
+    title: string;
+    description: string;
+    deadline: string;
+    timeLimit: number | string;
+  }>({ 
+    title: quiz.title, 
+    description: quiz.description,
+    deadline: quiz.deadline ? new Date(quiz.deadline).toISOString().slice(0, 16) : '',
+    timeLimit: quiz.timeLimit || 30
+  });
   const [regeneratingQuestionId, setRegeneratingQuestionId] = useState<string | null>(null);
   const [showRegenerateModal, setShowRegenerateModal] = useState(false);
   const [questionToRegenerate, setQuestionToRegenerate] = useState<string | null>(null);
@@ -142,19 +154,30 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
       onConfirm: async () => {
         try {
           const token = localStorage.getItem('token');
+          
+          // Prepare the data, converting empty deadline to null and ensuring timeLimit is a number
+          const updatePayload = {
+            ...quizData,
+            deadline: quizData.deadline || null,
+            timeLimit: typeof quizData.timeLimit === 'string' ? parseInt(quizData.timeLimit) || 30 : quizData.timeLimit
+          };
+          
+          console.log('Sending quiz data:', updatePayload);
           const response = await fetch(`/api/quizzes/${quiz._id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify(quizData),
+            body: JSON.stringify(updatePayload),
           });
 
           if (response.ok) {
             const data = await response.json();
             quiz.title = data.quiz.title;
             quiz.description = data.quiz.description;
+            quiz.deadline = data.quiz.deadline;
+            quiz.timeLimit = data.quiz.timeLimit;
             setEditingQuiz(false);
             showModal('Success', 'Quiz updated successfully!', 'success');
           } else {
@@ -996,11 +1019,72 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                   <textarea
                     value={quizData.description}
                     onChange={(e) => setQuizData({ ...quizData, description: e.target.value })}
-                    className="block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-secondary focus:border-secondary"
+                    className="block w-full px-4 py-3 rounded-xl text-white transition-all duration-200 focus:outline-none focus:ring-2"
+                    style={{
+                      backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                      borderWidth: '2px',
+                      borderStyle: 'solid',
+                      borderColor: 'rgba(79, 70, 229, 0.3)',
+                    }}
                     rows={3}
                     placeholder="Enter quiz description"
                   />
                 </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-300 mb-2">
+                      Deadline (Optional)
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={quizData.deadline}
+                      min={new Date().toISOString().slice(0, 16)}
+                      onChange={(e) => setQuizData({ ...quizData, deadline: e.target.value })}
+                      className="block w-full px-4 py-3 rounded-xl text-white transition-all duration-200 focus:outline-none focus:ring-2"
+                      style={{
+                        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                        borderWidth: '2px',
+                        borderStyle: 'solid',
+                        borderColor: 'rgba(79, 70, 229, 0.3)',
+                      }}
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Learners cannot submit after this date</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-300 mb-2">
+                      Time Limit (minutes)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="480"
+                      value={quizData.timeLimit}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Allow empty string while typing, otherwise parse the number
+                        setQuizData({ ...quizData, timeLimit: value === '' ? '' : parseInt(value) || 1 });
+                      }}
+                      onBlur={(e) => {
+                        // On blur, if empty, set to default 30
+                        if (e.target.value === '') {
+                          setQuizData({ ...quizData, timeLimit: 30 });
+                        }
+                      }}
+                      className="block w-full px-4 py-3 rounded-xl text-white transition-all duration-200 focus:outline-none focus:ring-2"
+                      style={{
+                        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                        borderWidth: '2px',
+                        borderStyle: 'solid',
+                        borderColor: 'rgba(79, 70, 229, 0.3)',
+                      }}
+                      placeholder="30"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Time allowed once quiz is started</p>
+                  </div>
+                </div>
+                
                 <div className="flex space-x-3">
                   <button
                     type="submit"
@@ -1016,7 +1100,12 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                     type="button"
                     onClick={() => {
                       setEditingQuiz(false);
-                      setQuizData({ title: quiz.title, description: quiz.description });
+                      setQuizData({ 
+                        title: quiz.title, 
+                        description: quiz.description,
+                        deadline: quiz.deadline ? new Date(quiz.deadline).toISOString().slice(0, 16) : '',
+                        timeLimit: quiz.timeLimit || 30
+                      });
                     }}
                     className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium"
                   >

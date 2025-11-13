@@ -17,7 +17,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { title, description, difficulty, questionTypes, numberOfQuestions, sourceText } = await request.json();
+    const body = await request.json();
+    const { title, description, difficulty, questionTypes, numberOfQuestions, sourceText, deadline, timeLimit } = body;
+    console.log('Creating quiz with:', { title, deadline, timeLimit });
 
     // Check if user is an instructor
     if (auth.user.role !== 'instructor') {
@@ -74,10 +76,13 @@ export async function POST(request: NextRequest) {
       questionTypes: questionTypes && questionTypes.length > 0 ? questionTypes : ['multiple-choice'],
       numberOfQuestions: numberOfQuestions || 10,
       sourceText: sourceText || '', // Store the original text content for regeneration
+      deadline: deadline || null,
+      timeLimit: timeLimit || 30,
       userId: auth.userId
     });
 
     await quiz.save();
+    console.log('Quiz saved with:', { deadline: quiz.deadline, timeLimit: quiz.timeLimit });
     
     return NextResponse.json(
       { 

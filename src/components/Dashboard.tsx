@@ -12,6 +12,8 @@ interface Quiz {
   description: string;
   createdAt: string;
   updatedAt: string;
+  deadline?: string;
+  timeLimit?: number;
   userId?: {
     _id: string;
     username: string;
@@ -42,6 +44,8 @@ const Dashboard: React.FC = () => {
     questions: any[];
     sourceText: string;
     classId?: string;
+    deadline?: string;
+    timeLimit?: number;
   } | null>(null);
   const [showAIPreview, setShowAIPreview] = useState(false);
   const [activeView, setActiveView] = useState<'home' | 'quizzes' | 'classes' | 'analytics' | 'settings'>(() => {
@@ -523,6 +527,8 @@ const Dashboard: React.FC = () => {
     const [selectedQuestionTypes, setSelectedQuestionTypes] = useState<string[]>(['multiple-choice']);
     const [numberOfQuestions, setNumberOfQuestions] = useState<number>(10);
     const [selectedClassId, setSelectedClassId] = useState<string>('');
+    const [quizDeadline, setQuizDeadline] = useState<string>('');
+    const [quizTimeLimit, setQuizTimeLimit] = useState<number>(30);
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
       const uploadedFile = event.target.files?.[0];
@@ -653,7 +659,9 @@ const Dashboard: React.FC = () => {
           numberOfQuestions,
           questions: limitedQuestions,
           sourceText: text,
-          classId: selectedClassId || undefined
+          classId: selectedClassId || undefined,
+          deadline: quizDeadline || undefined,
+          timeLimit: quizTimeLimit
         });
 
         setStep('preview');
@@ -1018,6 +1026,72 @@ const Dashboard: React.FC = () => {
                 </div>
               )}
 
+              {/* Deadline and Time Limit */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-3">
+                    📅 Deadline (Optional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={quizDeadline}
+                    min={new Date().toISOString().slice(0, 16)}
+                    onChange={(e) => setQuizDeadline(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none transition-all duration-200"
+                    style={{
+                      backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                      border: '2px solid rgba(79, 70, 229, 0.3)'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#4F46E5';
+                      e.target.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.2)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(79, 70, 229, 0.3)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                  <p className="text-xs text-gray-400 mt-2">Learners cannot submit after this date</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-3">
+                    ⏰ Time Limit (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="480"
+                    value={quizTimeLimit}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Allow empty string while typing, otherwise parse the number
+                      setQuizTimeLimit(value === '' ? '' as any : parseInt(value) || 1);
+                    }}
+                    onBlur={(e) => {
+                      // On blur, if empty, set to default 30
+                      if (e.target.value === '') {
+                        setQuizTimeLimit(30);
+                      }
+                      // Reset border styling
+                      e.target.style.borderColor = 'rgba(79, 70, 229, 0.3)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                    className="w-full px-4 py-3 rounded-xl text-white focus:outline-none transition-all duration-200"
+                    style={{
+                      backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                      border: '2px solid rgba(79, 70, 229, 0.3)'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#4F46E5';
+                      e.target.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.2)';
+                    }}
+                    placeholder="30"
+                  />
+                  <p className="text-xs text-gray-400 mt-2">Time allowed once quiz is started</p>
+                </div>
+              </div>
+
               {/* Action Buttons */}
               <div className="flex gap-3 pt-2">
                 <button
@@ -1107,6 +1181,19 @@ const Dashboard: React.FC = () => {
       try {
         const token = localStorage.getItem('token');
         
+        const quizPayload = {
+          title: editableQuiz.title,
+          description: editableQuiz.description,
+          difficulty: editableQuiz.difficulty,
+          questionTypes: editableQuiz.questionTypes,
+          numberOfQuestions: editableQuiz.numberOfQuestions,
+          sourceText: editableQuiz.sourceText || '', // Include the original text for regeneration
+          deadline: aiQuizData?.deadline || null,
+          timeLimit: aiQuizData?.timeLimit || 30
+        };
+        
+        console.log('Saving quiz with payload:', quizPayload);
+        
         // First create the quiz
         const quizResponse = await fetch('/api/quizzes', {
           method: 'POST',
@@ -1114,14 +1201,7 @@ const Dashboard: React.FC = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            title: editableQuiz.title,
-            description: editableQuiz.description,
-            difficulty: editableQuiz.difficulty,
-            questionTypes: editableQuiz.questionTypes,
-            numberOfQuestions: editableQuiz.numberOfQuestions,
-            sourceText: editableQuiz.sourceText || '' // Include the original text for regeneration
-          }),
+          body: JSON.stringify(quizPayload),
         });
 
         if (!quizResponse.ok) {
@@ -3573,6 +3653,26 @@ const Dashboard: React.FC = () => {
                         {quiz.description || 'No description provided'}
                       </p>
                       
+                      {/* Deadline and Time Limit Info */}
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {quiz.deadline && (
+                          <div className="flex items-center gap-1 text-xs text-gray-400">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>Due: {new Date(quiz.deadline).toLocaleDateString()}</span>
+                          </div>
+                        )}
+                        {quiz.timeLimit && (
+                          <div className="flex items-center gap-1 text-xs text-gray-400">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>{quiz.timeLimit} min</span>
+                          </div>
+                        )}
+                      </div>
+                      
                       <div className="flex-1"></div>
                       
                       <div className="flex gap-2 mt-auto">
@@ -3910,6 +4010,26 @@ const Dashboard: React.FC = () => {
                     <p className="text-gray-400 text-sm line-clamp-2 mb-3">
                       {quiz.description || 'No description available'}
                     </p>
+                    
+                    {/* Deadline and Time Limit Info */}
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {quiz.deadline && (
+                        <div className="flex items-center gap-1 text-xs text-gray-400">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span>Due: {new Date(quiz.deadline).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                      {quiz.timeLimit && (
+                        <div className="flex items-center gap-1 text-xs text-gray-400">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span>{quiz.timeLimit} min</span>
+                        </div>
+                      )}
+                    </div>
                     
                     <div className="flex-1"></div>
                     

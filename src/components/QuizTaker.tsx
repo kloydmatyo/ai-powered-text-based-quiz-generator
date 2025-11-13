@@ -16,6 +16,8 @@ interface Quiz {
   _id: string;
   title: string;
   description: string;
+  deadline?: string;
+  timeLimit?: number;
 }
 
 interface QuizTakerProps {
@@ -33,7 +35,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
   const [showResults, setShowResults] = useState(false);
   const [alreadyCompleted, setAlreadyCompleted] = useState(false);
   const [previousSubmission, setPreviousSubmission] = useState<any>(null);
-  const [timeRemaining, setTimeRemaining] = useState(1800); // 30 minutes default
+  const [timeRemaining, setTimeRemaining] = useState((quiz.timeLimit || 30) * 60); // Convert minutes to seconds
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean;
@@ -61,6 +63,16 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
   };
 
   useEffect(() => {
+    // Check if quiz deadline has passed
+    if (quiz.deadline) {
+      const deadline = new Date(quiz.deadline);
+      const now = new Date();
+      if (now > deadline) {
+        showModal('Quiz Closed', 'The deadline for this quiz has passed. You can no longer submit answers.', 'warning');
+        setAlreadyCompleted(true);
+        return;
+      }
+    }
     checkPreviousSubmission();
   }, [quiz._id]);
 
@@ -660,7 +672,14 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
                 </svg>
                 Back
               </button>
-              <h1 className="text-xl md:text-2xl font-bold text-white">{quiz.title}</h1>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-white">{quiz.title}</h1>
+                {quiz.deadline && (
+                  <p className="text-sm text-gray-400 mt-1">
+                    Deadline: {new Date(quiz.deadline).toLocaleString()}
+                  </p>
+                )}
+              </div>
             </div>
             
             {/* Progress & Timer */}

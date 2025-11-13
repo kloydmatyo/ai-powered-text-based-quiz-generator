@@ -92,7 +92,9 @@ export async function PUT(
 
     const { id } = await params;
     console.log('PUT route hit - Quiz ID:', id);
-    const { title, description } = await request.json();
+    const body = await request.json();
+    const { title, description, deadline, timeLimit } = body;
+    console.log('Received data:', { title, description, deadline, timeLimit });
 
     // Check if user is an instructor
     if (auth.user.role !== 'instructor') {
@@ -127,10 +129,27 @@ export async function PUT(
       );
     }
 
+    const updateData: any = { 
+      title, 
+      description,
+      deadline: deadline !== undefined ? (deadline || null) : undefined,
+      timeLimit: timeLimit !== undefined ? timeLimit : undefined,
+      updatedAt: new Date() 
+    };
+    
+    // Remove undefined values
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
+    
+    console.log('Final updateData:', updateData);
+    
     const quiz = await Quiz.findOneAndUpdate(
       { _id: id, userId: auth.userId },
-      { title, description, updatedAt: new Date() },
-      { new: true }
+      { $set: updateData },
+      { new: true, runValidators: true, strict: false }
     );
 
     if (!quiz) {
@@ -139,6 +158,10 @@ export async function PUT(
         { status: 500 }
       );
     }
+    
+    console.log('Updated quiz full object:', quiz.toObject());
+    console.log('Updated quiz deadline:', quiz.deadline);
+    console.log('Updated quiz timeLimit:', quiz.timeLimit);
     
     return NextResponse.json(
       { 

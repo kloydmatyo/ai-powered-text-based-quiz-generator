@@ -8,6 +8,8 @@ export interface IQuiz extends Document {
   questionTypes: string[];
   numberOfQuestions: number;
   sourceText?: string; // Original text content from PDF/file upload
+  deadline?: Date; // Deadline for quiz submission
+  timeLimit?: number; // Time limit in minutes
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,6 +55,16 @@ const QuizSchema: Schema = new Schema({
     ref: 'User',
     required: true
   },
+  deadline: {
+    type: Date,
+    default: null
+  },
+  timeLimit: {
+    type: Number,
+    default: 30, // Default 30 minutes
+    min: [1, 'Time limit must be at least 1 minute'],
+    max: [480, 'Time limit cannot exceed 480 minutes (8 hours)']
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -63,4 +75,9 @@ const QuizSchema: Schema = new Schema({
   }
 });
 
-export default mongoose.models.Quiz || mongoose.model<IQuiz>('Quiz', QuizSchema);
+// Delete cached model to ensure schema updates are applied
+if (mongoose.models.Quiz) {
+  delete mongoose.models.Quiz;
+}
+
+export default mongoose.model<IQuiz>('Quiz', QuizSchema);
