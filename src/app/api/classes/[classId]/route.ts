@@ -75,6 +75,29 @@ export async function PUT(
     if (addQuiz !== undefined) {
       if (!classData.quizzes.includes(addQuiz)) {
         classData.quizzes.push(addQuiz);
+        
+        // Create notifications for all learners in the class
+        try {
+          const Notification = (await import('@/models/Notification')).default;
+          const Quiz = (await import('@/models/Quiz')).default;
+          const quiz = await Quiz.findById(addQuiz);
+          
+          if (quiz && classData.learners.length > 0) {
+            const notifications = classData.learners.map((learnerId: any) => ({
+              userId: learnerId,
+              type: 'new_quiz',
+              title: 'New Quiz Available',
+              message: `A new quiz "${quiz.title}" has been added to ${classData.name}`,
+              relatedId: addQuiz,
+              relatedModel: 'Quiz'
+            }));
+            
+            await Notification.insertMany(notifications);
+          }
+        } catch (notifError) {
+          console.error('Error creating notifications:', notifError);
+          // Don't fail the update if notification fails
+        }
       }
     }
     

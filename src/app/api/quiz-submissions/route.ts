@@ -94,6 +94,22 @@ export async function POST(request: NextRequest) {
 
     await submission.save();
 
+    // Create notification for instructor
+    try {
+      const Notification = (await import('@/models/Notification')).default;
+      await Notification.create({
+        userId: quiz.userId,
+        type: 'quiz_submitted',
+        title: 'New Quiz Submission',
+        message: `${auth.user.username} submitted "${quiz.title}" with a score of ${score}%`,
+        relatedId: submission._id,
+        relatedModel: 'QuizSubmission'
+      });
+    } catch (notifError) {
+      console.error('Error creating notification:', notifError);
+      // Don't fail the submission if notification fails
+    }
+
     // Return score and correct answers for review
     const results = questions.map((question) => {
       const userAnswer = answers[question._id.toString()];

@@ -355,7 +355,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           {/* Bottom Bar */}
           <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4" style={{ borderColor: 'rgba(79, 70, 229, 0.2)' }}>
             <p className="text-gray-400 text-sm">
-              © 2024 QuizMate. All rights reserved.
+              © 2025 QuizMate. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
               <a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Privacy Policy</a>

@@ -277,7 +277,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
     return answer !== undefined && answer !== null && !(typeof answer === 'string' && answer.trim() === '');
   });
 
-  // Results View
+  // <View></View>
   if (submitted && showResults) {
     const correctAnswers = questions.filter((q) => {
       const userAnswer = userAnswers[q._id];

@@ -60,12 +60,33 @@ const Dashboard: React.FC = () => {
   const [showJoinClassModal, setShowJoinClassModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<any>(null);
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>('all'); // 'all' or classId
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     fetchQuizzes();
     fetchStats();
     fetchClasses();
+    fetchNotifications();
+    
+    // Poll for new notifications every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  // Close notifications dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showNotifications && !target.closest('.notifications-dropdown')) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showNotifications]);
 
   const fetchClasses = async () => {
     try {
@@ -82,6 +103,43 @@ const Dashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching classes:', error);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/notifications', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.notifications);
+        setUnreadCount(data.unreadCount);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const markNotificationsAsRead = async (notificationIds?: string[]) => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ notificationIds }),
+      });
+      
+      await fetchNotifications();
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
     }
   };
 
@@ -2749,25 +2807,148 @@ const Dashboard: React.FC = () => {
         {/* Right Side Actions */}
         <div className="flex items-center gap-3">
           {/* Notifications */}
-          <button 
-            className="relative p-2.5 rounded-xl transition-all duration-200 hover:scale-110 hidden sm:block"
-            style={{
-              backgroundColor: 'rgba(79, 70, 229, 0.1)',
-              border: '2px solid rgba(79, 70, 229, 0.2)',
-              color: '#A5B4FC'
-            }}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            <span 
-              className="absolute top-1 right-1 w-2 h-2 rounded-full animate-pulse"
+          <div className="relative hidden sm:block notifications-dropdown">
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2.5 rounded-xl transition-all duration-200 hover:scale-110"
               style={{
-                background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
-                boxShadow: '0 0 8px rgba(52, 211, 153, 0.6)'
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                border: '2px solid rgba(79, 70, 229, 0.2)',
+                color: '#A5B4FC'
               }}
-            />
-          </button>
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {unreadCount > 0 && (
+                <span 
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                  style={{
+                    background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+                    boxShadow: '0 0 8px rgba(239, 68, 68, 0.6)'
+                  }}
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Notifications Dropdown */}
+            {showNotifications && (
+              <div 
+                className="absolute right-0 mt-2 w-96 rounded-2xl border-2 shadow-2xl z-50 max-h-[32rem] overflow-hidden flex flex-col"
+                style={{
+                  background: 'rgba(15, 23, 42, 0.98)',
+                  borderColor: 'rgba(79, 70, 229, 0.3)',
+                  boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)'
+                }}
+              >
+                {/* Header */}
+                <div 
+                  className="p-4 border-b flex items-center justify-between"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
+                    borderColor: 'rgba(79, 70, 229, 0.3)'
+                  }}
+                >
+                  <h3 className="text-lg font-bold text-white">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={() => markNotificationsAsRead()}
+                      className="text-xs font-semibold px-3 py-1 rounded-lg transition-all duration-200 hover:scale-105"
+                      style={{
+                        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                        border: '1px solid rgba(79, 70, 229, 0.4)',
+                        color: '#A5B4FC'
+                      }}
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+
+                {/* Notifications List */}
+                <div className="overflow-y-auto flex-1">
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <div 
+                        className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"
+                        style={{
+                          background: 'rgba(79, 70, 229, 0.2)',
+                          border: '2px solid rgba(79, 70, 229, 0.3)'
+                        }}
+                      >
+                        <svg className="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                      </div>
+                      <p className="text-gray-400">No notifications yet</p>
+                    </div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <div
+                        key={notification._id}
+                        onClick={() => {
+                          if (!notification.read) {
+                            markNotificationsAsRead([notification._id]);
+                          }
+                        }}
+                        className="p-4 border-b transition-all duration-200 hover:bg-opacity-50 cursor-pointer"
+                        style={{
+                          backgroundColor: notification.read ? 'transparent' : 'rgba(79, 70, 229, 0.1)',
+                          borderColor: 'rgba(79, 70, 229, 0.2)'
+                        }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div 
+                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{
+                              background: notification.type === 'quiz_assigned' || notification.type === 'new_quiz'
+                                ? 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)'
+                                : notification.type === 'quiz_submitted' || notification.type === 'grade_posted'
+                                  ? 'linear-gradient(135deg, #34D399 0%, #10B981 100%)'
+                                  : 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)'
+                            }}
+                          >
+                            {notification.type === 'quiz_assigned' || notification.type === 'new_quiz' ? (
+                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            ) : notification.type === 'quiz_submitted' || notification.type === 'grade_posted' ? (
+                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <h4 className="text-sm font-bold text-white">{notification.title}</h4>
+                              {!notification.read && (
+                                <span 
+                                  className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
+                                  style={{
+                                    background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)'
+                                  }}
+                                />
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-400 mb-1">{notification.message}</p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(notification.createdAt).toLocaleDateString()} at {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Quick Actions (Instructor only) */}
           {user?.role === 'instructor' && (

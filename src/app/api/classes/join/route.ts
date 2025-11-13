@@ -45,6 +45,22 @@ export async function POST(request: NextRequest) {
     classToJoin.learners.push(authResult.userId);
     await classToJoin.save();
 
+    // Create notification for instructor
+    try {
+      const Notification = (await import('@/models/Notification')).default;
+      await Notification.create({
+        userId: classToJoin.instructorId,
+        type: 'class_joined',
+        title: 'New Student Joined',
+        message: `${authResult.user.username} joined your class "${classToJoin.name}"`,
+        relatedId: classToJoin._id,
+        relatedModel: 'Class'
+      });
+    } catch (notifError) {
+      console.error('Error creating notification:', notifError);
+      // Don't fail the join if notification fails
+    }
+
     const updatedClass = await Class.findById(classToJoin._id)
       .populate('instructorId', 'username email')
       .populate('learners', 'username email');
