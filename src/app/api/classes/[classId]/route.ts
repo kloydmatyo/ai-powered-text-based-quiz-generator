@@ -6,7 +6,7 @@ import Class from '@/models/Class';
 // GET - Get class details
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ classId: string }> }
+  context: { params: Promise<{ classId: string }> }
 ) {
   try {
     const authResult = await authenticateRequest(request);
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { classId } = await params;
+    const { classId } = await context.params;
     await dbConnect();
 
     const classData = await Class.findById(classId)
@@ -44,7 +44,7 @@ export async function GET(
 // PUT - Update class (instructor only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ classId: string }> }
+  context: { params: Promise<{ classId: string }> }
 ) {
   try {
     const authResult = await authenticateRequest(request);
@@ -52,7 +52,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { classId } = await params;
+    const { classId } = await context.params;
     await dbConnect();
 
     const classData = await Class.findById(classId);
@@ -102,7 +102,7 @@ export async function PUT(
 // DELETE - Delete class (instructor only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ classId: string }> }
+  context: { params: Promise<{ classId: string }> }
 ) {
   try {
     const authResult = await authenticateRequest(request);
@@ -110,7 +110,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { classId } = await params;
+    const { classId } = await context.params;
     await dbConnect();
 
     const classData = await Class.findById(classId);
