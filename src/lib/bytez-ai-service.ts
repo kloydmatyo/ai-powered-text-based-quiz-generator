@@ -59,6 +59,10 @@ export class BytezAIService {
       console.log('📦 Using model: openai/gpt-4.1');
       const questions = await this.generateWithAI(text, difficulty, numberOfQuestions, questionTypes);
       console.log('✅ SUCCESS: Questions generated using AI (GPT-4.1 via Bytez)');
+      
+      // Randomize multiple choice answers if they're all at position 0
+      this.randomizeMultipleChoiceAnswers(questions.multipleChoice);
+      
       return { questions, method: 'ai' };
     } catch (error) {
       console.warn('⚠️ AI generation failed, switching to rule-based fallback');
@@ -136,8 +140,8 @@ export class BytezAIService {
       jsonParts.push(`  "multipleChoice": [
     {
       "question": "Question text here?",
-      "options": ["Specific answer from text", "Another specific answer", "Third specific answer", "Fourth specific answer"],
-      "correctAnswer": 0
+      "options": ["First option", "Second option", "Third option", "Fourth option"],
+      "correctAnswer": 2
     }
   ]`);
     }
@@ -182,8 +186,8 @@ Generate questions in this EXACT JSON format (no markdown, no code blocks):
   "multipleChoice": [${counts.mcq > 0 ? `
     {
       "question": "Question text here?",
-      "options": ["Specific answer from text", "Another specific answer", "Third specific answer", "Fourth specific answer"],
-      "correctAnswer": 0
+      "options": ["First option", "Second option", "Third option", "Fourth option"],
+      "correctAnswer": 2
     }` : ''}
   ],
   "trueFalse": [${counts.trueFalse > 0 ? `
@@ -211,7 +215,8 @@ CRITICAL Requirements:
 - All questions must be directly based on the provided text content
 - Multiple choice: Use SPECIFIC, RELEVANT answers extracted from the text, NOT generic placeholders like "Option A/B/C/D"
 - Multiple choice: Each option should be a distinct, plausible answer from the text
-- Multiple choice: correctAnswer is the index (0-3) of the correct option
+- Multiple choice: correctAnswer is the index (0-3) of the correct option - RANDOMIZE this, do NOT always use 0
+- Multiple choice: IMPORTANT - Vary the correctAnswer index across questions (use 0, 1, 2, and 3 in different questions)
 - True/False: answer must be boolean (true or false)
 - Fill-in-the-blank: use "______" for blanks
 - Identification: ask to identify people, concepts, terms, or entities from the text
@@ -335,16 +340,28 @@ CRITICAL Requirements:
   }
 
   private generateMCQs(sentences: string[], keyTerms: string[], count: number): MultipleChoiceQuestion[] {
-    return sentences.slice(0, count).map((sentence, i) => ({
-      question: `According to the text, what is mentioned about ${keyTerms[i] || 'the topic'}?`,
-      options: [
-        sentence.trim(),
+    return sentences.slice(0, count).map((sentence, i) => {
+      // Create options array with correct answer
+      const correctAnswerText = sentence.trim();
+      const wrongOptions = [
         `${keyTerms[0] || 'The concept'} has different characteristics`,
         `${keyTerms[1] || 'The subject'} is not related to this topic`,
         `The text does not discuss ${keyTerms[i] || 'this concept'}`
-      ],
-      correctAnswer: 0
-    }));
+      ];
+      
+      // Randomize the position of the correct answer (0-3)
+      const correctAnswerIndex = Math.floor(Math.random() * 4);
+      
+      // Build options array with correct answer at random position
+      const options = [...wrongOptions];
+      options.splice(correctAnswerIndex, 0, correctAnswerText);
+      
+      return {
+        question: `According to the text, what is mentioned about ${keyTerms[i] || 'the topic'}?`,
+        options: options,
+        correctAnswer: correctAnswerIndex
+      };
+    });
   }
 
   private generateTrueFalse(sentences: string[], keyTerms: string[], count: number): TrueFalseQuestion[] {
@@ -377,6 +394,30 @@ CRITICAL Requirements:
       question: `Identify the key concept that is frequently discussed in the text and relates to: "${term}"`,
       answer: term
     }));
+  }
+
+  private randomizeMultipleChoiceAnswers(questions: MultipleChoiceQuestion[]): void {
+    // Check if all answers are at position 0 (AI bias)
+    const allAtZero = questions.every(q => q.correctAnswer === 0);
+    
+    if (allAtZero && questions.length > 0) {
+      console.log('🔀 Detected AI bias - randomizing answer positions...');
+      
+      questions.forEach(question => {
+        const currentCorrectAnswer = question.options[question.correctAnswer];
+        const newPosition = Math.floor(Math.random() * 4);
+        
+        // Swap the correct answer to new position
+        if (newPosition !== question.correctAnswer) {
+          const temp = question.options[newPosition];
+          question.options[newPosition] = currentCorrectAnswer;
+          question.options[question.correctAnswer] = temp;
+          question.correctAnswer = newPosition;
+        }
+      });
+      
+      console.log('✅ Answer positions randomized');
+    }
   }
 }
 
