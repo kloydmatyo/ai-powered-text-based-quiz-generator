@@ -132,6 +132,91 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const exportAnalyticsReport = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Fetch all submissions for detailed report
+      const response = await fetch('/api/quiz-submissions', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      
+      if (!response.ok) {
+        alert('Failed to fetch analytics data');
+        return;
+      }
+      
+      const data = await response.json();
+      const submissions = data.submissions || [];
+      
+      // Prepare CSV data
+      const csvRows = [];
+      
+      // Header row
+      csvRows.push([
+        'Quiz Title',
+        'Student Name',
+        'Student Email',
+        'Score (%)',
+        'Total Questions',
+        'Correct Answers',
+        'Submission Date',
+        'Time Taken'
+      ].join(','));
+      
+      // Data rows
+      for (const submission of submissions) {
+        const quizTitle = submission.quizId?.title || 'Unknown Quiz';
+        const studentName = submission.userId?.username || 'Unknown';
+        const studentEmail = submission.userId?.email || 'N/A';
+        const score = submission.score || 0;
+        const totalQuestions = Object.keys(submission.answers || {}).length;
+        const correctAnswers = Math.round((score / 100) * totalQuestions);
+        const submissionDate = new Date(submission.submittedAt).toLocaleString();
+        const timeTaken = 'N/A'; // Can be calculated if you track start time
+        
+        csvRows.push([
+          `"${quizTitle}"`,
+          `"${studentName}"`,
+          `"${studentEmail}"`,
+          score,
+          totalQuestions,
+          correctAnswers,
+          `"${submissionDate}"`,
+          timeTaken
+        ].join(','));
+      }
+      
+      // Add summary statistics
+      csvRows.push('');
+      csvRows.push('Summary Statistics');
+      csvRows.push(`Total Quizzes,${quizzes.length}`);
+      csvRows.push(`Total Submissions,${submissions.length}`);
+      csvRows.push(`Average Score,${stats.averageScore}%`);
+      csvRows.push(`Engagement Rate,${stats.engagement}%`);
+      
+      // Create CSV content
+      const csvContent = csvRows.join('\n');
+      
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `analytics_report_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('✅ Analytics report exported successfully');
+    } catch (error) {
+      console.error('Error exporting analytics:', error);
+      alert('Failed to export analytics report');
+    }
+  };
 
   const deleteQuiz = async (quizId: string) => {
     if (!confirm('Are you sure you want to delete this quiz?')) return;
@@ -3624,6 +3709,7 @@ const Dashboard: React.FC = () => {
                 <p className="text-gray-400">Track your quiz performance and engagement metrics</p>
               </div>
               <button 
+                onClick={exportAnalyticsReport}
                 className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center gap-2"
                 style={{
                   background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
