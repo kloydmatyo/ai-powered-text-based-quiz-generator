@@ -545,43 +545,96 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-gray-800 shadow">
+    <div className="min-h-screen" style={{ backgroundColor: '#0F172A' }}>
+      {/* Modern Header */}
+      <header 
+        className="border-b-2 backdrop-blur-xl sticky top-0 z-50"
+        style={{
+          background: 'rgba(15, 23, 42, 0.8)',
+          borderColor: 'rgba(79, 70, 229, 0.3)',
+          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)'
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between py-6 gap-4">
+            {/* Left Section */}
+            <div className="flex items-center gap-4">
               <button
                 onClick={onBack}
-                className="text-gray-300 hover:text-white"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                style={{
+                  color: '#A5B4FC',
+                  backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                  border: '2px solid rgba(79, 70, 229, 0.3)'
+                }}
               >
-                ← Back to Quizzes
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back
               </button>
-              <h1 className="text-2xl font-bold text-white">{quiz.title}</h1>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">{quiz.title}</h1>
+                {quiz.description && (
+                  <p className="text-sm text-gray-400 mt-1">{quiz.description}</p>
+                )}
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
+
+            {/* Right Section - Action Buttons */}
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setEditingQuiz(true)}
-                className="bg-secondary hover:bg-secondary/90 text-white px-4 py-2 rounded-md text-sm font-medium"
+                className="px-4 py-2 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                style={{
+                  background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                }}
               >
-                ✏️ Edit Quiz
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit Quiz
               </button>
               <button
                 onClick={exportToCSV}
-                className="bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-md text-sm font-medium"
+                className="px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                style={{
+                  backgroundColor: 'rgba(52, 211, 153, 0.2)',
+                  border: '2px solid rgba(52, 211, 153, 0.3)',
+                  color: '#34D399'
+                }}
               >
-                Export CSV
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                CSV
               </button>
               <button
                 onClick={exportToPDF}
-                className="bg-secondary hover:bg-secondary/90 text-white px-4 py-2 rounded-md text-sm font-medium"
+                className="px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                style={{
+                  backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                  border: '2px solid rgba(139, 92, 246, 0.3)',
+                  color: '#A78BFA'
+                }}
               >
-                Export PDF
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                PDF
               </button>
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md text-sm font-medium"
+                className="px-6 py-2 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                style={{
+                  background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
+                  boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                }}
               >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
                 Add Question
               </button>
             </div>
@@ -594,13 +647,31 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
         <div className="px-4 py-6 sm:px-0">
           {/* Edit Quiz Form */}
           {editingQuiz && (
-            <div className="bg-gray-800 rounded-lg p-6 mb-6 border-2 border-secondary">
-              <h3 className="text-lg font-medium text-white mb-4">
-                ✏️ Edit Quiz Details
-              </h3>
-              <form onSubmit={updateQuiz} className="space-y-4">
+            <div 
+              className="rounded-2xl p-8 mb-8 border-2"
+              style={{
+                background: 'rgba(15, 23, 42, 0.6)',
+                borderColor: 'rgba(139, 92, 246, 0.4)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2)'
+              }}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)' }}
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white">
+                  Edit Quiz Details
+                </h3>
+              </div>
+              <form onSubmit={updateQuiz} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">
                     Quiz Title
                   </label>
                   <input
@@ -608,12 +679,26 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                     required
                     value={quizData.title}
                     onChange={(e) => setQuizData({ ...quizData, title: e.target.value })}
-                    className="block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-secondary focus:border-secondary"
+                    className="block w-full px-4 py-3 rounded-xl text-white transition-all duration-200 focus:outline-none focus:ring-2"
+                    style={{
+                      backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                      borderWidth: '2px',
+                      borderStyle: 'solid',
+                      borderColor: 'rgba(79, 70, 229, 0.3)',
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#4F46E5';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(79, 70, 229, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(79, 70, 229, 0.3)';
+                      e.target.style.boxShadow = 'none';
+                    }}
                     placeholder="Enter quiz title"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">
                     Description (Optional)
                   </label>
                   <textarea
@@ -814,91 +899,197 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
           )}
 
           {/* Questions List */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             {questions.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-400 text-lg">No questions added yet.</p>
-                <p className="text-gray-500 text-sm mt-2">Click "Add Question" to get started!</p>
+              <div className="flex flex-col items-center justify-center py-20">
+                <div 
+                  className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
+                    border: '2px solid rgba(79, 70, 229, 0.3)'
+                  }}
+                >
+                  <svg className="w-12 h-12 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">No Questions Yet</h3>
+                <p className="text-gray-400 text-center max-w-md mb-6">
+                  Click "Add Question" to get started building your quiz!
+                </p>
               </div>
             ) : (
               questions.map((question, index) => (
-                <div key={question._id} className="bg-gray-800 rounded-lg p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-medium text-white">
-                          {index + 1}. {question.questionText}
-                        </h3>
-                        <span className="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300">
-                          {question.questionType === 'fill-in-blank' ? 'Fill in the Blank' :
-                           question.questionType === 'true-false' ? 'True/False' :
-                           'Multiple Choice'}
-                        </span>
+                <div 
+                  key={question._id}
+                  className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:shadow-2xl"
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    borderColor: 'rgba(79, 70, 229, 0.2)',
+                    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)'
+                  }}
+                >
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)'
+                    }}
+                  />
+                  
+                  <div className="relative p-6">
+                    {/* Question Header */}
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+                      <div className="flex-1">
+                        <div className="flex items-start gap-4 mb-3">
+                          <div 
+                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-white"
+                            style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)' }}
+                          >
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-xl font-bold text-white mb-2">
+                              {question.questionText}
+                            </h3>
+                            <span 
+                              className="inline-block text-xs px-3 py-1 rounded-lg font-semibold"
+                              style={{
+                                backgroundColor: question.questionType === 'fill-in-blank' ? 'rgba(52, 211, 153, 0.2)' :
+                                                question.questionType === 'true-false' ? 'rgba(139, 92, 246, 0.2)' :
+                                                'rgba(79, 70, 229, 0.2)',
+                                color: question.questionType === 'fill-in-blank' ? '#34D399' :
+                                       question.questionType === 'true-false' ? '#A78BFA' :
+                                       '#A5B4FC'
+                              }}
+                            >
+                              {question.questionType === 'fill-in-blank' ? 'Fill in the Blank' :
+                               question.questionType === 'true-false' ? 'True/False' :
+                               'Multiple Choice'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => openRegenerateModal(question._id)}
+                          disabled={regeneratingQuestionId === question._id}
+                          className="px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{
+                            backgroundColor: 'rgba(52, 211, 153, 0.2)',
+                            border: '2px solid rgba(52, 211, 153, 0.3)',
+                            color: '#34D399'
+                          }}
+                          title="Regenerate this question with AI"
+                        >
+                          {regeneratingQuestionId === question._id ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                              </svg>
+                              <span className="hidden sm:inline">Regenerating...</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                              <span className="hidden sm:inline">Regenerate</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setEditingQuestion(question)}
+                          className="px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                          style={{
+                            backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                            border: '2px solid rgba(139, 92, 246, 0.3)',
+                            color: '#A78BFA'
+                          }}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          <span className="hidden sm:inline">Edit</span>
+                        </button>
+                        <button
+                          onClick={() => deleteQuestion(question._id)}
+                          className="px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                          style={{
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            border: '2px solid rgba(239, 68, 68, 0.3)',
+                            color: '#F87171'
+                          }}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          <span className="hidden sm:inline">Delete</span>
+                        </button>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => openRegenerateModal(question._id)}
-                        disabled={regeneratingQuestionId === question._id}
-                        className="bg-accent hover:bg-green-600 text-white px-3 py-1 rounded text-sm flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Regenerate this question with AI"
+                    
+                    {/* Answer Display */}
+                    {question.questionType === 'fill-in-blank' ? (
+                      <div 
+                        className="p-4 rounded-xl border-2"
+                        style={{
+                          backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                          borderColor: 'rgba(52, 211, 153, 0.3)'
+                        }}
                       >
-                        {regeneratingQuestionId === question._id ? (
-                          <>
-                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                            </svg>
-                            <span>Regenerating...</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            <span>Regenerate</span>
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setEditingQuestion(question)}
-                        className="bg-secondary hover:bg-purple-700 text-white px-3 py-1 rounded text-sm"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteQuestion(question._id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {question.questionType === 'fill-in-blank' ? (
-                    <div className="bg-green-900 text-green-100 p-3 rounded">
-                      <span className="font-medium">Correct Answer:</span> {question.correctAnswer}
-                      <span className="ml-2 text-green-400">✓</span>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {question.answerChoices.map((choice, choiceIndex) => (
-                        <div
-                          key={choiceIndex}
-                          className={`p-2 rounded ${
-                            question.correctAnswer === choiceIndex
-                              ? 'bg-green-900 text-green-100'
-                              : 'bg-gray-700 text-gray-300'
-                          }`}
-                        >
-                          {String.fromCharCode(65 + choiceIndex)}. {choice}
-                          {question.correctAnswer === choiceIndex && (
-                            <span className="ml-2 text-green-400">✓ Correct</span>
-                          )}
+                        <div className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <span className="font-semibold text-emerald-300">Correct Answer:</span>
+                          <span className="text-white font-medium">{question.correctAnswer}</span>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {question.answerChoices.map((choice, choiceIndex) => (
+                          <div
+                            key={choiceIndex}
+                            className="p-4 rounded-xl border-2 transition-all duration-200"
+                            style={{
+                              backgroundColor: question.correctAnswer === choiceIndex 
+                                ? 'rgba(52, 211, 153, 0.1)' 
+                                : 'rgba(30, 41, 59, 0.5)',
+                              borderColor: question.correctAnswer === choiceIndex 
+                                ? 'rgba(52, 211, 153, 0.4)' 
+                                : 'rgba(79, 70, 229, 0.2)'
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span 
+                                className="w-8 h-8 rounded-lg flex items-center justify-center font-bold flex-shrink-0"
+                                style={{
+                                  backgroundColor: question.correctAnswer === choiceIndex 
+                                    ? 'rgba(52, 211, 153, 0.3)' 
+                                    : 'rgba(79, 70, 229, 0.2)',
+                                  color: question.correctAnswer === choiceIndex 
+                                    ? '#34D399' 
+                                    : '#A5B4FC'
+                                }}
+                              >
+                                {String.fromCharCode(65 + choiceIndex)}
+                              </span>
+                              <span className={question.correctAnswer === choiceIndex ? 'text-white font-medium' : 'text-gray-300'}>
+                                {choice}
+                              </span>
+                              {question.correctAnswer === choiceIndex && (
+                                <svg className="w-5 h-5 text-emerald-400 ml-auto" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))
             )}
@@ -908,11 +1099,23 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
 
       {/* Regenerate Confirmation Modal */}
       {showRegenerateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-2xl p-8 max-w-md w-full border-2 border-accent shadow-2xl">
+        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div 
+            className="rounded-3xl p-8 max-w-md w-full border-2 shadow-2xl"
+            style={{
+              background: 'rgba(15, 23, 42, 0.95)',
+              borderColor: 'rgba(52, 211, 153, 0.4)',
+              boxShadow: '0 25px 50px rgba(52, 211, 153, 0.2)'
+            }}
+          >
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-full bg-accent bg-opacity-20 flex items-center justify-center">
-                <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div 
+                className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                style={{
+                  background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)'
+                }}
+              >
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </div>
