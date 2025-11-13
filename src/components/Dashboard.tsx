@@ -89,6 +89,8 @@ const Dashboard: React.FC = () => {
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
   const [isSyncing, setIsSyncing] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' } | null>(null);
+
+  
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean;
     title: string;
@@ -119,7 +121,7 @@ const Dashboard: React.FC = () => {
              showCreateClassModal || showJoinClassModal || selectedClass || modalConfig.isOpen;
     };
     
-    // Real-time polling intervals - pause when modals are open
+    // Real-time polling intervals - pause when modals are open or user is typing
     const notificationInterval = setInterval(() => {
       if (!checkModalState()) {
         fetchNotifications();
@@ -3040,15 +3042,14 @@ const Dashboard: React.FC = () => {
   // Top Header Component
   const TopHeader = () => (
     <header 
-      className="fixed top-0 right-0 left-0 h-20 backdrop-blur-xl border-b z-30 md:ml-0 transition-all duration-300"
+      className={`fixed top-0 right-0 left-0 h-20 backdrop-blur-xl border-b z-30 transition-all duration-300 ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-72'}`}
       style={{ 
-        marginLeft: window.innerWidth >= 768 ? (sidebarCollapsed ? '5rem' : '18rem') : '0',
         background: 'rgba(15, 23, 42, 0.95)',
         borderColor: 'rgba(79, 70, 229, 0.2)',
         boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)'
       }}
     >
-      <div className="h-full px-4 md:px-8 flex items-center justify-between gap-4">
+      <div className="h-full px-4 md:px-8 flex items-center gap-4">
         {/* Mobile Menu Button */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -3064,46 +3065,8 @@ const Dashboard: React.FC = () => {
           </svg>
         </button>
 
-        {/* Search Bar */}
-        <div className="flex-1 max-w-2xl">
-          <div className="relative hidden sm:block">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <input
-              type="text"
-              placeholder="Search quizzes, questions, or topics..."
-              className="w-full px-4 py-3 pl-12 pr-4 rounded-xl text-white placeholder-gray-500 focus:outline-none transition-all duration-200 text-sm"
-              style={{
-                background: 'rgba(30, 41, 59, 0.5)',
-                border: '2px solid rgba(79, 70, 229, 0.2)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#4F46E5';
-                e.target.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = 'rgba(79, 70, 229, 0.2)';
-                e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
-              }}
-            />
-          </div>
-          <button 
-            className="sm:hidden p-2.5 rounded-xl transition-all duration-200 hover:scale-110"
-            style={{
-              backgroundColor: 'rgba(79, 70, 229, 0.2)',
-              border: '2px solid rgba(79, 70, 229, 0.3)',
-              color: '#A5B4FC'
-            }}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </button>
-        </div>
+        {/* Spacer to push right side to the far right */}
+        <div className="flex-1"></div>
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-3">
