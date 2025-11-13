@@ -3418,7 +3418,7 @@ const Dashboard: React.FC = () => {
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-500/20 to-violet-500/20 rounded-full blur-3xl" />
               <div className="relative">
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
-                  Welcome back, {user?.username}! 👋
+                  Welcome, {user?.username}! 👋
                 </h2>
                 <p className="text-lg text-gray-300">
                   {user?.role === 'instructor' ? 'Ready to create amazing quizzes today?' : 'Ready to take some quizzes today?'}

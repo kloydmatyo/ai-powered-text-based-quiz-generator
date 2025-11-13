@@ -111,7 +111,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
               </svg>
             </div>
             <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-              Quiz Generator
+              QuizMate
             </h1>
             <p className="text-gray-400 text-sm">Create your account to get started</p>
           </div>

@@ -89,7 +89,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
               </svg>
             </div>
             <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-              Quiz Generator
+              QuizMate
             </h1>
             <p className="text-gray-400 text-sm">Welcome back! Please sign in to continue</p>
           </div>
@@ -261,7 +261,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-4 text-gray-400" style={{ backgroundColor: 'rgba(15, 23, 42, 0.8)' }}>
-                New to Quiz Generator?
+                New to QuizMate?
               </span>
             </div>
           </div>
