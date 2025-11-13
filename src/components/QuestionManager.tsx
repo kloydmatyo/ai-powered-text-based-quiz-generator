@@ -457,83 +457,325 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
     const { jsPDF } = await import('jspdf');
     const doc = new jsPDF();
     
-    doc.setFontSize(20);
-    doc.text(quiz.title, 20, 30);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const contentWidth = pageWidth - (margin * 2);
     
+    // Colors
+    const primaryColor: [number, number, number] = [79, 70, 229]; // Indigo
+    const successColor: [number, number, number] = [16, 185, 129]; // Emerald
+    const textColor: [number, number, number] = [15, 23, 42]; // Dark slate
+    const grayColor: [number, number, number] = [148, 163, 184]; // Gray
+    
+    let yPosition = margin;
+    
+    // Header with gradient effect (simulated with rectangles)
+    doc.setFillColor(79, 70, 229);
+    doc.rect(0, 0, pageWidth, 50, 'F');
+    doc.setFillColor(139, 92, 246);
+    doc.rect(0, 40, pageWidth, 10, 'F');
+    
+    // Title
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    const titleLines = doc.splitTextToSize(quiz.title, contentWidth);
+    doc.text(titleLines, pageWidth / 2, 25, { align: 'center' });
+    
+    yPosition = 65;
+    
+    // Description
     if (quiz.description) {
-      doc.setFontSize(12);
-      doc.text(quiz.description, 20, 45);
+      doc.setTextColor(...grayColor);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'italic');
+      const descLines = doc.splitTextToSize(quiz.description, contentWidth);
+      doc.text(descLines, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += (descLines.length * 6) + 10;
     }
     
-    let yPosition = 60;
+    // Quiz Info Box
+    doc.setDrawColor(...primaryColor);
+    doc.setFillColor(79, 70, 229, 10);
+    doc.roundedRect(margin, yPosition, contentWidth, 15, 3, 3, 'FD');
+    doc.setTextColor(...primaryColor);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total Questions: ${questions.length}`, margin + 5, yPosition + 10);
+    doc.text(`Quiz Type: Mixed`, pageWidth - margin - 5, yPosition + 10, { align: 'right' });
     
+    yPosition += 25;
+    
+    // Questions
     questions.forEach((question, index) => {
-      if (yPosition > 250) {
+      // Check if we need a new page
+      const estimatedHeight = 40 + (question.answerChoices.length * 8);
+      if (yPosition + estimatedHeight > pageHeight - margin) {
         doc.addPage();
-        yPosition = 30;
+        yPosition = margin;
       }
       
-      doc.setFontSize(14);
-      const questionType = question.questionType === 'fill-in-blank' ? '[Fill in the Blank]' :
-                          question.questionType === 'true-false' ? '[True/False]' : '[Multiple Choice]';
-      doc.text(`${index + 1}. ${questionType} ${question.questionText}`, 20, yPosition);
-      yPosition += 10;
+      // Question number and type badge
+      doc.setFillColor(...primaryColor);
+      doc.circle(margin + 5, yPosition + 3, 5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(String(index + 1), margin + 5, yPosition + 5, { align: 'center' });
       
+      // Question type badge
+      const questionType = question.questionType === 'fill-in-blank' ? 'Fill in the Blank' :
+                          question.questionType === 'true-false' ? 'True/False' : 'Multiple Choice';
+      doc.setFillColor(139, 92, 246, 30);
+      doc.setDrawColor(139, 92, 246);
+      const badgeWidth = doc.getTextWidth(questionType) + 8;
+      doc.roundedRect(margin + 15, yPosition - 2, badgeWidth, 8, 2, 2, 'FD');
+      doc.setTextColor(139, 92, 246);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text(questionType, margin + 19, yPosition + 3);
+      
+      yPosition += 12;
+      
+      // Question text
+      doc.setTextColor(...textColor);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      const questionLines = doc.splitTextToSize(question.questionText, contentWidth - 10);
+      doc.text(questionLines, margin + 5, yPosition);
+      yPosition += (questionLines.length * 6) + 5;
+      
+      // Answers
       if (question.questionType === 'fill-in-blank') {
-        doc.setFontSize(12);
-        doc.text(`✓ Answer: ${question.correctAnswer}`, 25, yPosition);
-        yPosition += 8;
+        // Fill in the blank answer
+        doc.setFillColor(...successColor);
+        doc.setDrawColor(...successColor);
+        doc.roundedRect(margin + 10, yPosition - 3, contentWidth - 15, 10, 2, 2, 'D');
+        
+        doc.setTextColor(...successColor);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('✓ Answer:', margin + 15, yPosition + 3);
+        
+        doc.setFont('helvetica', 'normal');
+        const answerText = String(question.correctAnswer);
+        const answerLines = doc.splitTextToSize(answerText, contentWidth - 50);
+        doc.text(answerLines, margin + 40, yPosition + 3);
+        yPosition += 12;
       } else {
+        // Multiple choice or true/false
         question.answerChoices.forEach((choice, choiceIndex) => {
-          const prefix = question.correctAnswer === choiceIndex ? '✓' : ' ';
-          doc.setFontSize(12);
-          doc.text(`${prefix} ${String.fromCharCode(65 + choiceIndex)}. ${choice}`, 25, yPosition);
-          yPosition += 8;
+          const isCorrect = question.correctAnswer === choiceIndex;
+          const letter = String.fromCharCode(65 + choiceIndex);
+          
+          // Choice background
+          if (isCorrect) {
+            doc.setFillColor(...successColor, 15);
+            doc.setDrawColor(...successColor);
+            doc.roundedRect(margin + 10, yPosition - 3, contentWidth - 15, 10, 2, 2, 'FD');
+          }
+          
+          // Letter badge
+          if (isCorrect) {
+            doc.setFillColor(...successColor);
+            doc.circle(margin + 15, yPosition + 2, 4, 'F');
+            doc.setTextColor(255, 255, 255);
+          } else {
+            doc.setDrawColor(...grayColor);
+            doc.circle(margin + 15, yPosition + 2, 4, 'D');
+            doc.setTextColor(...grayColor);
+          }
+          
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.text(letter, margin + 15, yPosition + 3.5, { align: 'center' });
+          
+          // Choice text
+          doc.setTextColor(isCorrect ? successColor[0] : textColor[0], 
+                          isCorrect ? successColor[1] : textColor[1], 
+                          isCorrect ? successColor[2] : textColor[2]);
+          doc.setFontSize(10);
+          doc.setFont('helvetica', isCorrect ? 'bold' : 'normal');
+          const choiceLines = doc.splitTextToSize(choice, contentWidth - 35);
+          doc.text(choiceLines, margin + 23, yPosition + 3);
+          
+          // Checkmark for correct answer
+          if (isCorrect) {
+            doc.setTextColor(...successColor);
+            doc.setFontSize(12);
+            doc.text('✓', contentWidth + margin - 5, yPosition + 3);
+          }
+          
+          yPosition += Math.max(10, choiceLines.length * 5 + 2);
         });
       }
       
+      // Separator line
       yPosition += 5;
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.5);
+      doc.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += 10;
     });
+    
+    // Footer on each page
+    const pageCount = doc.internal.pages.length - 1;
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(...grayColor);
+      doc.setFont('helvetica', 'italic');
+      doc.text(`${quiz.title} - Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      doc.text('Generated by QuizMate', pageWidth - margin, pageHeight - 10, { align: 'right' });
+    }
     
     doc.save(`${quiz.title}.pdf`);
   };
 
-  const exportToCSV = () => {
-    const csvContent = [
-      ['Question Type', 'Question', 'Choice A', 'Choice B', 'Choice C', 'Choice D', 'Choice E', 'Choice F', 'Correct Answer'],
-      ...questions.map(question => {
-        const row = [
-          question.questionType === 'fill-in-blank' ? 'Fill in the Blank' :
-          question.questionType === 'true-false' ? 'True/False' : 'Multiple Choice',
-          question.questionText
-        ];
-        // Add answer choices (pad with empty strings if less than 6)
-        for (let i = 0; i < 6; i++) {
-          row.push(question.answerChoices[i] || '');
-        }
-        // Add correct answer
+  const exportToDOCX = async () => {
+    try {
+      const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, Table, TableRow, TableCell, WidthType, VerticalAlign, Packer } = await import('docx');
+      const { saveAs } = await import('file-saver');
+
+      const children: any[] = [];
+
+      // Title
+      children.push(
+        new Paragraph({
+          text: quiz.title,
+          heading: HeadingLevel.HEADING_1,
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 }
+        })
+      );
+
+      // Description
+      if (quiz.description) {
+        children.push(
+          new Paragraph({
+            text: quiz.description,
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 600 }
+          })
+        );
+      }
+
+      // Quiz Info
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Total Questions: ${questions.length}`,
+              bold: true
+            })
+          ],
+          spacing: { after: 400 }
+        })
+      );
+
+      // Add each question
+      questions.forEach((question, index) => {
+        // Question number and type
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Question ${index + 1}`,
+                bold: true,
+                size: 28
+              }),
+              new TextRun({
+                text: ` (${question.questionType === 'fill-in-blank' ? 'Fill in the Blank' : question.questionType === 'true-false' ? 'True/False' : 'Multiple Choice'})`,
+                italics: true,
+                size: 24
+              })
+            ],
+            spacing: { before: 400, after: 200 }
+          })
+        );
+
+        // Question text
+        children.push(
+          new Paragraph({
+            text: question.questionText,
+            spacing: { after: 200 }
+          })
+        );
+
+        // Answer choices or fill-in-blank answer
         if (question.questionType === 'fill-in-blank') {
-          row.push(String(question.correctAnswer));
+          children.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: 'Answer: ',
+                  bold: true
+                }),
+                new TextRun({
+                  text: String(question.correctAnswer),
+                  color: '10B981'
+                })
+              ],
+              spacing: { after: 200 }
+            })
+          );
         } else {
-          row.push(String.fromCharCode(65 + (typeof question.correctAnswer === 'number' ? question.correctAnswer : 0)));
+          // Multiple choice or true/false
+          question.answerChoices.forEach((choice, choiceIndex) => {
+            const isCorrect = question.correctAnswer === choiceIndex;
+            children.push(
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `${String.fromCharCode(65 + choiceIndex)}. `,
+                    bold: true
+                  }),
+                  new TextRun({
+                    text: choice,
+                    color: isCorrect ? '10B981' : '000000',
+                    bold: isCorrect
+                  }),
+                  ...(isCorrect ? [new TextRun({ text: ' ✓', color: '10B981', bold: true })] : [])
+                ],
+                spacing: { after: 100 }
+              })
+            );
+          });
         }
-        return row;
-      })
-    ];
 
-    const csvString = csvContent
-      .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
-      .join('\n');
+        // Add spacing after question
+        children.push(
+          new Paragraph({
+            text: '',
+            spacing: { after: 200 },
+            border: {
+              bottom: {
+                color: 'E5E7EB',
+                space: 1,
+                style: BorderStyle.SINGLE,
+                size: 6
+              }
+            }
+          })
+        );
+      });
 
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${quiz.title}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      // Create document
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: children
+        }]
+      });
+
+      // Generate and save
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `${quiz.title}.docx`);
+    } catch (error) {
+      console.error('Error exporting to DOCX:', error);
+      alert('Failed to export to DOCX. Please try again.');
+    }
   };
 
   if (loading) {
@@ -597,7 +839,7 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                 Edit Quiz
               </button>
               <button
-                onClick={exportToCSV}
+                onClick={exportToDOCX}
                 className="px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
                 style={{
                   backgroundColor: 'rgba(52, 211, 153, 0.2)',
@@ -606,9 +848,9 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                 }}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                CSV
+                DOCX
               </button>
               <button
                 onClick={exportToPDF}
