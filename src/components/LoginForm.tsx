@@ -14,7 +14,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
   const { login } = useAuth();
@@ -214,13 +213,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
 
             {/* Forgot Password */}
             <div className="text-right">
-              <button
-                type="button"
-                onClick={() => setShowForgotPassword(true)}
+              <a
+                href="/forgot-password"
                 className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
               >
                 Forgot password?
-              </button>
+              </a>
             </div>
 
             {/* Login Button */}
@@ -293,58 +291,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
           </div>
         </div>
       </div>
-
-      {/* Forgot Password Modal */}
-      {showForgotPassword && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-sm w-full border border-gray-600">
-            <h3 className="text-lg font-bold text-white mb-4">Reset Password</h3>
-            <p className="text-sm text-gray-300 mb-4">
-              Enter your email address and we'll send you a link to reset your password.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowForgotPassword(false)}
-                className="flex-1 px-4 py-2 rounded-lg text-sm font-medium text-gray-300 border border-gray-600 hover:border-gray-500 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  if (!email) {
-                    setError('Please enter your email address first');
-                    return;
-                  }
-
-                  try {
-                    const response = await fetch('/api/auth/forgot-password', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({ email }),
-                    });
-
-                    if (response.ok) {
-                      setShowForgotPassword(false);
-                      setError('');
-                      alert('Password reset link sent to your email!');
-                    } else {
-                      const data = await response.json();
-                      setError(data.error || 'Failed to send reset email');
-                    }
-                  } catch (error) {
-                    setError('Network error. Please try again.');
-                  }
-                }}
-                className="flex-1 px-4 py-2 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
-              >
-                Send Link
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -8,6 +8,8 @@ export interface IUser extends Document {
   emailVerified: boolean;
   verificationToken?: string | null;
   verificationTokenExpiry?: Date | null;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiry?: Date | null;
   googleId?: string;
   image?: string | null;
   createdAt: Date;
@@ -53,6 +55,14 @@ const UserSchema: Schema = new Schema({
     type: Date,
     default: null
   },
+  resetPasswordToken: {
+    type: String,
+    default: null
+  },
+  resetPasswordExpiry: {
+    type: Date,
+    default: null
+  },
   googleId: {
     type: String,
     unique: true,
@@ -68,4 +78,9 @@ const UserSchema: Schema = new Schema({
   }
 });
 
-export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+// Delete the cached model to ensure schema updates are applied
+if (mongoose.models.User) {
+  delete mongoose.models.User;
+}
+
+export default mongoose.model<IUser>('User', UserSchema);
