@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 
 interface User {
   _id: string;
@@ -31,9 +32,28 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    // Check if user is logged in on app start
+    // Check NextAuth session first (for Google OAuth users)
+    if (status === 'loading') {
+      setLoading(true);
+      return;
+    }
+
+    if (status === 'authenticated' && session?.user) {
+      // User logged in via Google OAuth
+      setUser({
+        _id: session.user.id,
+        email: session.user.email,
+        username: session.user.name,
+        role: session.user.role as 'learner' | 'instructor'
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Check if user is logged in via traditional auth
     const token = localStorage.getItem('token');
     if (token) {
       // Verify the token and get user data
@@ -41,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [session, status]);
 
   const verifyToken = async (token: string) => {
     try {
@@ -115,6 +135,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      // Check if user is logged in via NextAuth (Google)
+      if (session) {
+        await signOut({ redirect: false });
+      }
+      
+      // Also handle traditional auth logout
       await fetch('/api/auth/logout', {
         method: 'POST',
       });

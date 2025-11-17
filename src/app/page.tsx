@@ -9,7 +9,28 @@ import Dashboard from '@/components/Dashboard';
 
 export default function Home() {
   const { user, loading } = useAuth();
-  const [view, setView] = useState<'landing' | 'login' | 'register'>('landing');
+  const [view, setView] = useState<'landing' | 'login' | 'register'>(() => {
+    // Check URL parameters for initial view
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const viewParam = params.get('view');
+      if (viewParam === 'login' || viewParam === 'register') {
+        return viewParam;
+      }
+    }
+    return 'landing';
+  });
+
+  // Listen for URL changes
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view');
+    if (viewParam === 'login') {
+      setView('login');
+    } else if (viewParam === 'register') {
+      setView('register');
+    }
+  }, []);
 
   if (loading) {
     return (

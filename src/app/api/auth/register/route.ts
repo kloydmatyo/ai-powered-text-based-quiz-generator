@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import { hashPassword, validateEmail, validatePassword } from '@/lib/auth';
+import { sendVerificationEmail } from '@/lib/email';
+import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,22 +49,38 @@ export async function POST(request: NextRequest) {
     // Hash password and create user
     const hashedPassword = await hashPassword(password);
     
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    
     const user = new User({
       email,
       username,
       password: hashedPassword,
-      role: role || 'learner'
+      role: role || 'learner',
+      emailVerified: false,
+      verificationToken,
+      verificationTokenExpiry
     });
 
     await user.save();
+
+    // Send verification email
+    try {
+      await sendVerificationEmail(email, verificationToken);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Don't fail registration if email fails
+    }
 
     // Return user without password
     const { password: _, ...userWithoutPassword } = user.toObject();
     
     return NextResponse.json(
       { 
-        message: 'User registered successfully',
-        user: userWithoutPassword
+        message: 'Registration successful! Please check your email to verify your account.',
+        user: userWithoutPassword,
+        emailSent: true
       },
       { status: 201 }
     );
