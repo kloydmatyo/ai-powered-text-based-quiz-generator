@@ -12,19 +12,26 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
   const { login } = useAuth();
 
-  // Check for OAuth errors in URL
+  // Check for OAuth errors and verification success in URL
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const errorParam = urlParams.get('error');
+    const verifiedParam = urlParams.get('verified');
+    
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
-      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    
+    if (verifiedParam === 'true') {
+      setSuccess('Email verified successfully! You can now sign in.');
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -32,6 +39,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
@@ -40,6 +48,34 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
       setError(error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccess('Verification email sent! Please check your inbox.');
+        setError('');
+      } else {
+        setError(data.error || 'Failed to send verification email');
+      }
+    } catch (error) {
+      setError('Network error. Please try again.');
     }
   };
 
@@ -84,10 +120,25 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
             <p className="text-gray-400 text-xs">Sign in to continue</p>
           </div>
 
+          {/* Success Message */}
+          {success && (
+            <div className="mb-3 p-3 rounded-lg border-2" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', borderColor: 'rgba(34, 197, 94, 0.3)' }}>
+              <p className="text-green-300 text-xs font-medium">{success}</p>
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="mb-3 p-3 rounded-lg border-2" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
               <p className="text-red-300 text-xs font-medium">{error}</p>
+              {error.includes('verify your email') && (
+                <button
+                  onClick={handleResendVerification}
+                  className="mt-2 text-xs text-red-400 hover:text-red-300 underline"
+                >
+                  Resend verification email
+                </button>
+              )}
             </div>
           )}
 

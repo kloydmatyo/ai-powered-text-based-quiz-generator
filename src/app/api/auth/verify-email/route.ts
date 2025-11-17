@@ -4,6 +4,8 @@ import User from '@/models/User';
 
 export async function GET(request: NextRequest) {
   try {
+    await connectDB();
+    
     const searchParams = request.nextUrl.searchParams;
     const token = searchParams.get('token');
 
@@ -14,9 +16,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await connectDB();
-
-    // Find user with this token
+    // Find user with this verification token
     const user = await User.findOne({
       verificationToken: token,
       verificationTokenExpiry: { $gt: new Date() }
@@ -29,16 +29,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify the email
+    // Mark email as verified
     user.emailVerified = true;
-    user.verificationToken = null;
-    user.verificationTokenExpiry = null;
+    user.verificationToken = undefined;
+    user.verificationTokenExpiry = undefined;
     await user.save();
 
-    // Redirect to login with success message
-    return NextResponse.redirect(
-      new URL('/?verified=true', request.url)
-    );
+    // Redirect to login page with success message
+    return NextResponse.redirect(new URL('/?view=login&verified=true', request.url));
 
   } catch (error: any) {
     console.error('Email verification error:', error);
