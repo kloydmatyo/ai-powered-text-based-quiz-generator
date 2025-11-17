@@ -871,36 +871,36 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between py-6 gap-4">
-            {/* Left Section */}
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-4 py-4 sm:py-6">
+            {/* Top Row - Back Button and Title */}
+            <div className="flex items-start gap-3 sm:gap-4">
               <button
                 onClick={onBack}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex-shrink-0 text-sm sm:text-base"
                 style={{
                   color: '#A5B4FC',
                   backgroundColor: 'rgba(79, 70, 229, 0.2)',
                   border: '2px solid rgba(79, 70, 229, 0.3)'
                 }}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
-                Back
+                <span className="hidden sm:inline">Back</span>
               </button>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-white">{quiz.title}</h1>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white break-words">{quiz.title}</h1>
                 {quiz.description && (
-                  <p className="text-sm text-gray-400 mt-1">{quiz.description}</p>
+                  <p className="text-xs sm:text-sm text-gray-400 mt-1 break-words">{quiz.description}</p>
                 )}
               </div>
             </div>
 
-            {/* Right Section - Action Buttons */}
+            {/* Bottom Row - Action Buttons */}
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setEditingQuiz(true)}
-                className="px-4 py-2 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                className="px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center gap-2"
                 style={{
                   background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
                   boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
@@ -909,11 +909,11 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
-                Edit Quiz
+                <span className="hidden sm:inline">Edit Quiz</span>
               </button>
               <button
                 onClick={exportToDOCX}
-                className="px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                className="px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
                 style={{
                   backgroundColor: 'rgba(52, 211, 153, 0.2)',
                   border: '2px solid rgba(52, 211, 153, 0.3)',
@@ -923,11 +923,11 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                DOCX
+                <span className="hidden xs:inline">DOCX</span>
               </button>
               <button
                 onClick={exportToPDF}
-                className="px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                className="px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
                 style={{
                   backgroundColor: 'rgba(139, 92, 246, 0.2)',
                   border: '2px solid rgba(139, 92, 246, 0.3)',
@@ -937,20 +937,20 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
-                PDF
+                <span className="hidden xs:inline">PDF</span>
               </button>
               <button
                 onClick={() => setShowCreateForm(true)}
-                className="px-6 py-2 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                className="px-4 sm:px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center gap-2"
                 style={{
                   background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
                   boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
                 }}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Add Question
+                <span className="hidden xs:inline">Add Question</span>
               </button>
             </div>
           </div>
@@ -958,12 +958,12 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+      <main className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+        <div className="space-y-6">
           {/* Edit Quiz Form */}
           {editingQuiz && (
             <div 
-              className="rounded-2xl p-8 mb-8 border-2"
+              className="rounded-2xl p-4 sm:p-6 lg:p-8 border-2"
               style={{
                 background: 'rgba(15, 23, 42, 0.6)',
                 borderColor: 'rgba(139, 92, 246, 0.4)',
@@ -1085,7 +1085,7 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                   </div>
                 </div>
                 
-                <div className="flex space-x-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     type="submit"
                     className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:scale-105"
@@ -1118,7 +1118,7 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
 
           {/* Create/Edit Question Form */}
           {(showCreateForm || editingQuestion) && (
-            <div className="bg-gray-800 rounded-lg p-6 mb-6">
+            <div className="bg-gray-800 rounded-lg p-4 sm:p-6">
               <h3 className="text-lg font-medium text-white mb-4">
                 {editingQuestion ? 'Edit Question' : 'Add New Question'}
               </h3>
@@ -1261,7 +1261,7 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                   </div>
                 )}
 
-                <div className="flex space-x-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     type="submit"
                     className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:scale-105"
@@ -1324,19 +1324,19 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                     }}
                   />
                   
-                  <div className="relative p-6">
+                  <div className="relative p-4 sm:p-6">
                     {/* Question Header */}
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
-                      <div className="flex-1">
-                        <div className="flex items-start gap-4 mb-3">
+                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-6">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-3 sm:gap-4 mb-3">
                           <div 
-                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-white"
+                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-white text-sm sm:text-base"
                             style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)' }}
                           >
                             {index + 1}
                           </div>
-                          <div className="flex-1">
-                            <h3 className="text-xl font-bold text-white mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg sm:text-xl font-bold text-white mb-2 break-words">
                               {question.questionText}
                             </h3>
                             <span 
@@ -1359,11 +1359,11 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                       </div>
                       
                       {/* Action Buttons */}
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 lg:flex-nowrap">
                         <button
                           onClick={() => openRegenerateModal(question._id)}
                           disabled={regeneratingQuestionId === question._id}
-                          className="px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{
                             backgroundColor: 'rgba(52, 211, 153, 0.2)',
                             border: '2px solid rgba(52, 211, 153, 0.3)',
@@ -1390,7 +1390,7 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                         </button>
                         <button
                           onClick={() => setEditingQuestion(question)}
-                          className="px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                          className="px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
                           style={{
                             backgroundColor: 'rgba(139, 92, 246, 0.2)',
                             border: '2px solid rgba(139, 92, 246, 0.3)',
@@ -1404,7 +1404,7 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                         </button>
                         <button
                           onClick={() => deleteQuestion(question._id)}
-                          className="px-4 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
+                          className="px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
                           style={{
                             backgroundColor: 'rgba(239, 68, 68, 0.2)',
                             border: '2px solid rgba(239, 68, 68, 0.3)',
@@ -1422,26 +1422,26 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                     {/* Answer Display */}
                     {question.questionType === 'fill-in-blank' ? (
                       <div 
-                        className="p-4 rounded-xl border-2"
+                        className="p-3 sm:p-4 rounded-xl border-2"
                         style={{
                           backgroundColor: 'rgba(52, 211, 153, 0.1)',
                           borderColor: 'rgba(52, 211, 153, 0.3)'
                         }}
                       >
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                           </svg>
-                          <span className="font-semibold text-emerald-300">Correct Answer:</span>
-                          <span className="text-white font-medium">{question.correctAnswer}</span>
+                          <span className="font-semibold text-emerald-300 text-sm sm:text-base">Correct Answer:</span>
+                          <span className="text-white font-medium text-sm sm:text-base break-words">{question.correctAnswer}</span>
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="space-y-2 sm:space-y-3">
                         {question.answerChoices.map((choice, choiceIndex) => (
                           <div
                             key={choiceIndex}
-                            className="p-4 rounded-xl border-2 transition-all duration-200"
+                            className="p-3 sm:p-4 rounded-xl border-2 transition-all duration-200"
                             style={{
                               backgroundColor: question.correctAnswer === choiceIndex 
                                 ? 'rgba(52, 211, 153, 0.1)' 
@@ -1451,9 +1451,9 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                                 : 'rgba(79, 70, 229, 0.2)'
                             }}
                           >
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 sm:gap-3">
                               <span 
-                                className="w-8 h-8 rounded-lg flex items-center justify-center font-bold flex-shrink-0"
+                                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-bold flex-shrink-0 text-sm sm:text-base"
                                 style={{
                                   backgroundColor: question.correctAnswer === choiceIndex 
                                     ? 'rgba(52, 211, 153, 0.3)' 
@@ -1465,11 +1465,11 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                               >
                                 {String.fromCharCode(65 + choiceIndex)}
                               </span>
-                              <span className={question.correctAnswer === choiceIndex ? 'text-white font-medium' : 'text-gray-300'}>
+                              <span className={`flex-1 text-sm sm:text-base break-words ${question.correctAnswer === choiceIndex ? 'text-white font-medium' : 'text-gray-300'}`}>
                                 {choice}
                               </span>
                               {question.correctAnswer === choiceIndex && (
-                                <svg className="w-5 h-5 text-emerald-400 ml-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                 </svg>
                               )}
@@ -1490,38 +1490,38 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
       {showRegenerateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div 
-            className="rounded-3xl p-8 max-w-md w-full border-2 shadow-2xl"
+            className="rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 max-w-md w-full border-2 shadow-2xl max-h-[90vh] overflow-y-auto"
             style={{
               background: 'rgba(15, 23, 42, 0.95)',
               borderColor: 'rgba(52, 211, 153, 0.4)',
               boxShadow: '0 25px 50px rgba(52, 211, 153, 0.2)'
             }}
           >
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div 
-                className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0"
                 style={{
                   background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)'
                 }}
               >
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-white">Regenerate Question?</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-white">Regenerate Question?</h3>
             </div>
             
-            <p className="text-gray-300 mb-6 leading-relaxed">
+            <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6 leading-relaxed">
               This will use AI to generate a completely new question based on your quiz topic. 
               The current question will be permanently replaced.
             </p>
 
-            <div className="bg-gray-900 rounded-lg p-4 mb-6 border border-gray-700">
+            <div className="bg-gray-900 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-gray-700">
               <div className="flex items-start gap-2">
                 <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
-                <div className="text-sm text-gray-400">
+                <div className="text-xs sm:text-sm text-gray-400">
                   <p className="font-medium text-gray-300 mb-1">What happens:</p>
                   <ul className="list-disc list-inside space-y-1">
                     <li>AI generates a new question</li>
@@ -1537,22 +1537,22 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={closeRegenerateModal}
-                className="flex-1 px-6 py-3 rounded-xl font-semibold text-gray-300 bg-gray-700 hover:bg-gray-600 transition-colors duration-200"
+                className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold text-gray-300 bg-gray-700 hover:bg-gray-600 transition-colors duration-200"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmRegenerateQuestion}
-                className="flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
+                className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-sm sm:text-base font-semibold text-white transition-all duration-200 hover:scale-105 flex items-center justify-center gap-2"
                 style={{
                   background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
                   boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
                 }}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 Regenerate
