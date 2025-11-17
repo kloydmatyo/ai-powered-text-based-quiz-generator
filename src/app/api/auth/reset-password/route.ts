@@ -37,6 +37,14 @@ export async function POST(request: NextRequest) {
     }
     
     // Check if token is expired
+    if (!userWithToken.resetPasswordExpiry) {
+      console.log('❌ Token has no expiry date');
+      return NextResponse.json(
+        { error: 'Invalid reset token. Please request a new password reset.' },
+        { status: 400 }
+      );
+    }
+    
     const now = new Date();
     const expiryDate = new Date(userWithToken.resetPasswordExpiry);
     

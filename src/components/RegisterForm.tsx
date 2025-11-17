@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { signIn } from 'next-auth/react';
+import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
@@ -208,6 +209,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                   )}
                 </button>
               </div>
+              <PasswordStrengthIndicator password={password} />
             </div>
 
             {/* Confirm Password Input */}

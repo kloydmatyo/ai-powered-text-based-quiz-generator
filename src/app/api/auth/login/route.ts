@@ -33,6 +33,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if user has a password (not OAuth-only user)
+    if (!user.password) {
+      return NextResponse.json(
+        { error: 'This account uses Google Sign-In. Please sign in with Google.' },
+        { status: 401 }
+      );
+    }
+
     // Verify password
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
@@ -51,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate JWT token
-    const token = generateToken(user._id.toString());
+    const token = generateToken((user._id as any).toString());
 
     // Return user without password and token
     const { password: _, ...userWithoutPassword } = user.toObject();

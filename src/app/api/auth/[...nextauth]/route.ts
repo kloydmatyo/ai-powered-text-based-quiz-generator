@@ -40,7 +40,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: user._id.toString(),
+          id: (user._id as any).toString(),
           email: user.email,
           name: user.username,
           role: user.role,
@@ -69,7 +69,7 @@ export const authOptions: NextAuthOptions = {
           await existingUser.save();
         }
         
-        user.id = existingUser._id.toString();
+        user.id = (existingUser._id as any).toString();
         user.role = existingUser.role;
       }
       return true;
