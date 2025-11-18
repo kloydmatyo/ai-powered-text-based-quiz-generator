@@ -147,6 +147,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(null);
       localStorage.removeItem('token');
+      
+      // Redirect to login page
+      if (typeof window !== 'undefined') {
+        window.location.href = '/?view=login';
+      }
     } catch (error) {
       console.error('Logout error:', error);
     }
