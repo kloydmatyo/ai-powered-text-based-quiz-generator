@@ -1350,36 +1350,27 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
             </div>
           )}
 
-          {/* Create/Edit Question Form */}
-          {(showCreateForm || editingQuestion) && (
+          {/* Create Question Form (Edit is now inline) */}
+          {showCreateForm && !editingQuestion && (
             <div className="bg-gray-800 rounded-lg p-4 sm:p-6">
               <h3 className="text-lg font-medium text-white mb-4">
-                {editingQuestion ? 'Edit Question' : 'Add New Question'}
+                Add New Question
               </h3>
-              <form onSubmit={editingQuestion ? updateQuestion : createQuestion} className="space-y-4">
+              <form onSubmit={createQuestion} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Question Type
                   </label>
                   <select
-                    value={editingQuestion ? editingQuestion.questionType : newQuestion.questionType}
+                    value={newQuestion.questionType}
                     onChange={(e) => {
                       const type = e.target.value as 'multiple-choice' | 'true-false' | 'fill-in-blank';
-                      if (editingQuestion) {
-                        setEditingQuestion({
-                          ...editingQuestion,
-                          questionType: type,
-                          answerChoices: type === 'true-false' ? ['True', 'False'] : type === 'fill-in-blank' ? [] : ['', ''],
-                          correctAnswer: type === 'fill-in-blank' ? '' : 0
-                        });
-                      } else {
-                        setNewQuestion({
-                          ...newQuestion,
-                          questionType: type,
-                          answerChoices: type === 'true-false' ? ['True', 'False'] : type === 'fill-in-blank' ? [] : ['', ''],
-                          correctAnswer: type === 'fill-in-blank' ? '' : 0
-                        });
-                      }
+                      setNewQuestion({
+                        ...newQuestion,
+                        questionType: type,
+                        answerChoices: type === 'true-false' ? ['True', 'False'] : type === 'fill-in-blank' ? [] : ['', ''],
+                        correctAnswer: type === 'fill-in-blank' ? '' : 0
+                      });
                     }}
                     className="block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-primary focus:border-primary"
                   >
@@ -1395,13 +1386,9 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                   </label>
                   <textarea
                     required
-                    value={editingQuestion ? editingQuestion.questionText : newQuestion.questionText}
+                    value={newQuestion.questionText}
                     onChange={(e) => {
-                      if (editingQuestion) {
-                        setEditingQuestion({ ...editingQuestion, questionText: e.target.value });
-                      } else {
-                        setNewQuestion({ ...newQuestion, questionText: e.target.value });
-                      }
+                      setNewQuestion({ ...newQuestion, questionText: e.target.value });
                     }}
                     className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-primary focus:border-primary"
                     rows={3}
@@ -1410,7 +1397,7 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                 </div>
 
                 {/* Answer section based on question type */}
-                {(editingQuestion ? editingQuestion.questionType : newQuestion.questionType) === 'fill-in-blank' ? (
+                {newQuestion.questionType === 'fill-in-blank' ? (
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Correct Answer
@@ -1418,13 +1405,9 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                     <input
                       type="text"
                       required
-                      value={editingQuestion ? String(editingQuestion.correctAnswer) : String(newQuestion.correctAnswer)}
+                      value={String(newQuestion.correctAnswer)}
                       onChange={(e) => {
-                        if (editingQuestion) {
-                          setEditingQuestion({ ...editingQuestion, correctAnswer: e.target.value });
-                        } else {
-                          setNewQuestion({ ...newQuestion, correctAnswer: e.target.value });
-                        }
+                        setNewQuestion({ ...newQuestion, correctAnswer: e.target.value });
                       }}
                       className="block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-primary focus:border-primary"
                       placeholder="Enter the correct answer"
@@ -1438,18 +1421,14 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Answer Choices
                     </label>
-                    {(editingQuestion ? editingQuestion.answerChoices : newQuestion.answerChoices).map((choice, index) => (
+                    {newQuestion.answerChoices.map((choice, index) => (
                       <div key={index} className="flex items-center space-x-2 mb-2">
                         <input
                           type="radio"
                           name="correctAnswer"
-                          checked={(editingQuestion ? editingQuestion.correctAnswer : newQuestion.correctAnswer) === index}
+                          checked={newQuestion.correctAnswer === index}
                           onChange={() => {
-                            if (editingQuestion) {
-                              setEditingQuestion({ ...editingQuestion, correctAnswer: index });
-                            } else {
-                              setNewQuestion({ ...newQuestion, correctAnswer: index });
-                            }
+                            setNewQuestion({ ...newQuestion, correctAnswer: index });
                           }}
                           className="text-primary"
                         />
@@ -1458,23 +1437,19 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                           required
                           value={choice}
                           onChange={(e) => {
-                            const newChoices = [...(editingQuestion ? editingQuestion.answerChoices : newQuestion.answerChoices)];
+                            const newChoices = [...newQuestion.answerChoices];
                             newChoices[index] = e.target.value;
-                            if (editingQuestion) {
-                              setEditingQuestion({ ...editingQuestion, answerChoices: newChoices });
-                            } else {
-                              setNewQuestion({ ...newQuestion, answerChoices: newChoices });
-                            }
+                            setNewQuestion({ ...newQuestion, answerChoices: newChoices });
                           }}
                           className="flex-1 px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-primary focus:border-primary"
                           placeholder={`Choice ${index + 1}`}
-                          disabled={(editingQuestion ? editingQuestion.questionType : newQuestion.questionType) === 'true-false'}
+                          disabled={newQuestion.questionType === 'true-false'}
                         />
-                        {(editingQuestion ? editingQuestion.questionType : newQuestion.questionType) !== 'true-false' && 
-                         (editingQuestion ? editingQuestion.answerChoices.length : newQuestion.answerChoices.length) > 2 && (
+                        {newQuestion.questionType !== 'true-false' && 
+                         newQuestion.answerChoices.length > 2 && (
                           <button
                             type="button"
-                            onClick={() => removeAnswerChoice(index, !!editingQuestion)}
+                            onClick={() => removeAnswerChoice(index, false)}
                             className="text-red-400 hover:text-red-300"
                           >
                             Remove
@@ -1482,11 +1457,11 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                         )}
                       </div>
                     ))}
-                    {(editingQuestion ? editingQuestion.questionType : newQuestion.questionType) === 'multiple-choice' &&
-                     (editingQuestion ? editingQuestion.answerChoices.length : newQuestion.answerChoices.length) < 6 && (
+                    {newQuestion.questionType === 'multiple-choice' &&
+                     newQuestion.answerChoices.length < 6 && (
                       <button
                         type="button"
-                        onClick={() => addAnswerChoice(!!editingQuestion)}
+                        onClick={() => addAnswerChoice(false)}
                         className="text-primary hover:text-indigo-400 text-sm"
                       >
                         + Add Choice
@@ -1504,13 +1479,12 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                       boxShadow: '0 4px 12px rgba(52, 211, 153, 0.3)'
                     }}
                   >
-                    {editingQuestion ? 'Update Question' : 'Add Question'}
+                    Add Question
                   </button>
                   <button
                     type="button"
                     onClick={() => {
                       setShowCreateForm(false);
-                      setEditingQuestion(null);
                     }}
                     className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium"
                   >
@@ -1623,18 +1597,35 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                           )}
                         </button>
                         <button
-                          onClick={() => setEditingQuestion(question)}
+                          onClick={() => {
+                            if (editingQuestion?._id === question._id) {
+                              setEditingQuestion(null);
+                            } else {
+                              setEditingQuestion(question);
+                            }
+                          }}
                           className="px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-105 flex items-center gap-2"
                           style={{
-                            backgroundColor: 'rgba(139, 92, 246, 0.2)',
-                            border: '2px solid rgba(139, 92, 246, 0.3)',
-                            color: '#A78BFA'
+                            backgroundColor: editingQuestion?._id === question._id ? 'rgba(239, 68, 68, 0.2)' : 'rgba(139, 92, 246, 0.2)',
+                            border: editingQuestion?._id === question._id ? '2px solid rgba(239, 68, 68, 0.3)' : '2px solid rgba(139, 92, 246, 0.3)',
+                            color: editingQuestion?._id === question._id ? '#F87171' : '#A78BFA'
                           }}
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          <span className="hidden sm:inline">Edit</span>
+                          {editingQuestion?._id === question._id ? (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              <span className="hidden sm:inline">Cancel</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              <span className="hidden sm:inline">Edit</span>
+                            </>
+                          )}
                         </button>
                         <button
                           onClick={() => deleteQuestion(question._id)}
@@ -1710,6 +1701,148 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {/* Inline Edit Form */}
+                    {editingQuestion?._id === question._id && (
+                      <div className="mt-6 pt-6 border-t-2" style={{ borderColor: 'rgba(139, 92, 246, 0.3)' }}>
+                        <form onSubmit={updateQuestion} className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              Question Type
+                            </label>
+                            <select
+                              value={editingQuestion.questionType}
+                              onChange={(e) => {
+                                const type = e.target.value as 'multiple-choice' | 'true-false' | 'fill-in-blank';
+                                setEditingQuestion({
+                                  ...editingQuestion,
+                                  questionType: type,
+                                  answerChoices: type === 'true-false' ? ['True', 'False'] : type === 'fill-in-blank' ? [] : ['', ''],
+                                  correctAnswer: type === 'fill-in-blank' ? '' : 0
+                                });
+                              }}
+                              className="block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-primary focus:border-primary"
+                            >
+                              <option value="multiple-choice">Multiple Choice</option>
+                              <option value="true-false">True/False</option>
+                              <option value="fill-in-blank">Fill in the Blank</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              Question Text
+                            </label>
+                            <textarea
+                              value={editingQuestion.questionText}
+                              onChange={(e) => setEditingQuestion({ ...editingQuestion, questionText: e.target.value })}
+                              className="block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-primary focus:border-primary"
+                              rows={3}
+                              required
+                            />
+                          </div>
+
+                          {editingQuestion.questionType === 'fill-in-blank' ? (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-300 mb-2">
+                                Correct Answer
+                              </label>
+                              <input
+                                type="text"
+                                value={editingQuestion.correctAnswer as string}
+                                onChange={(e) => setEditingQuestion({ ...editingQuestion, correctAnswer: e.target.value })}
+                                className="block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-primary focus:border-primary"
+                                required
+                              />
+                            </div>
+                          ) : (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-300 mb-2">
+                                Answer Choices
+                              </label>
+                              <div className="space-y-2">
+                                {editingQuestion.answerChoices.map((choice, index) => (
+                                  <div key={index} className="flex gap-2">
+                                    <input
+                                      type="text"
+                                      value={choice}
+                                      onChange={(e) => {
+                                        const newChoices = [...editingQuestion.answerChoices];
+                                        newChoices[index] = e.target.value;
+                                        setEditingQuestion({ ...editingQuestion, answerChoices: newChoices });
+                                      }}
+                                      className="flex-1 px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-primary focus:border-primary"
+                                      placeholder={`Choice ${String.fromCharCode(65 + index)}`}
+                                      required
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const currentAnswer = typeof editingQuestion.correctAnswer === 'number' ? editingQuestion.correctAnswer : 0;
+                                        setEditingQuestion({
+                                          ...editingQuestion,
+                                          correctAnswer: currentAnswer === index ? 0 : currentAnswer
+                                        });
+                                      }}
+                                      className={`px-3 py-2 rounded-md text-sm font-medium ${
+                                        editingQuestion.correctAnswer === index
+                                          ? 'bg-green-600 text-white'
+                                          : 'bg-gray-600 text-gray-300'
+                                      }`}
+                                    >
+                                      {editingQuestion.correctAnswer === index ? '✓' : '○'}
+                                    </button>
+                                    {editingQuestion.questionType !== 'true-false' && editingQuestion.answerChoices.length > 2 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => removeAnswerChoice(index, true)}
+                                        className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm"
+                                      >
+                                        ✕
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                              {editingQuestion.questionType !== 'true-false' && editingQuestion.answerChoices.length < 6 && (
+                                <button
+                                  type="button"
+                                  onClick={() => addAnswerChoice(true)}
+                                  className="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium"
+                                >
+                                  + Add Choice
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex gap-2 pt-4">
+                            <button
+                              type="submit"
+                              className="px-6 py-2 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-105"
+                              style={{
+                                background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)'
+                              }}
+                            >
+                              Save Changes
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingQuestion(null)}
+                              className="px-6 py-2 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+                              style={{
+                                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                                border: '2px solid rgba(239, 68, 68, 0.3)',
+                                color: '#F87171'
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
                       </div>
                     )}
                   </div>
