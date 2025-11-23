@@ -336,14 +336,18 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
       }
       
       // Determine question types to request based on current question type
+      // Request the desired type first, but also include fallback types
+      // IMPORTANT: Use hyphenated format that the AI service expects
       let questionTypes: string[] = [];
       if (question.questionType === 'multiple-choice') {
-        questionTypes = ['multipleChoice'];
+        questionTypes = ['multiple-choice', 'identification'];
       } else if (question.questionType === 'true-false') {
-        questionTypes = ['trueFalse'];
+        questionTypes = ['true-false', 'identification', 'multiple-choice'];
       } else if (question.questionType === 'fill-in-blank') {
-        questionTypes = ['fillInTheBlank'];
+        questionTypes = ['fill-in-blank', 'identification'];
       }
+
+      console.log('🎯 Requesting question types:', questionTypes);
 
       // Call AI to generate a new question
       const aiResponse = await fetch('/api/analyze-text', {
@@ -367,18 +371,36 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
 
       const aiData = await aiResponse.json();
       console.log('📊 AI Response:', aiData);
+      console.log('📊 Questions object:', JSON.stringify(aiData.questions, null, 2));
       
       // Check if we got any questions at all
       if (!aiData.questions) {
         throw new Error('No questions returned from AI. Please try again or add more context to your quiz.');
       }
       
+      // Log what question types we actually got
+      console.log('📊 Available question types:', {
+        multipleChoice: aiData.questions?.multipleChoice?.length || 0,
+        trueFalse: aiData.questions?.trueFalse?.length || 0,
+        fillInTheBlank: aiData.questions?.fillInTheBlank?.length || 0,
+        identification: aiData.questions?.identification?.length || 0
+      });
+      
       // Extract the generated question based on type
       let newQuestionData;
       if (question.questionType === 'multiple-choice') {
         if (aiData.questions?.multipleChoice?.length > 0) {
-          newQuestionData = aiData.questions.multipleChoice[0];
-          console.log('✅ Got multiple choice question from AI');
+          const mcQuestion = aiData.questions.multipleChoice[0];
+          console.log('✅ Got multiple choice question from AI:', mcQuestion);
+          
+          // Multiple choice uses 'correctAnswer' (index) not 'correctAnswerIndex'
+          newQuestionData = {
+            question: mcQuestion.question || '',
+            options: mcQuestion.options || [],
+            correctAnswerIndex: mcQuestion.correctAnswer !== undefined ? mcQuestion.correctAnswer : mcQuestion.correctAnswerIndex
+          };
+          
+          console.log('🔄 Mapped multiple choice fields:', newQuestionData);
         } else if (aiData.questions?.identification?.length > 0) {
           // AI generated identification instead of multiple choice
           // We need to create proper distractors from the context
@@ -416,8 +438,16 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
         }
       } else if (question.questionType === 'true-false') {
         if (aiData.questions?.trueFalse?.length > 0) {
-          newQuestionData = aiData.questions.trueFalse[0];
-          console.log('✅ Got true/false question from AI');
+          const tfQuestion = aiData.questions.trueFalse[0];
+          console.log('✅ Got true/false question from AI:', tfQuestion);
+          
+          // True/false questions use 'statement' field and boolean 'answer'
+          newQuestionData = {
+            question: tfQuestion.statement || tfQuestion.question || '',
+            answer: tfQuestion.answer === true || tfQuestion.answer === 'True' || tfQuestion.answer === 'true' ? 'True' : 'False'
+          };
+          
+          console.log('🔄 Mapped true/false fields:', newQuestionData);
         } else if (aiData.questions?.multipleChoice?.length > 0) {
           // Fallback: Convert multiple choice to true/false statement
           const mcQuestion = aiData.questions.multipleChoice[0];
@@ -471,31 +501,115 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
         }
       } else if (question.questionType === 'fill-in-blank') {
         if (aiData.questions?.fillInTheBlank?.length > 0) {
-          newQuestionData = aiData.questions.fillInTheBlank[0];
-          console.log('✅ Got fill-in-blank question from AI');
-        } else if (aiData.questions?.multipleChoice?.length > 0) {
-          // Fallback: Convert multiple choice to fill-in-blank
-          const mcQuestion = aiData.questions.multipleChoice[0];
-          console.warn('⚠️ AI generated multiple choice instead of fill-in-blank, converting...');
-          // Use the correct answer from the multiple choice
-          const correctAnswer = mcQuestion.options[mcQuestion.correctAnswerIndex];
-          // Modify the question to be fill-in-blank style
-          let blankQuestion = mcQuestion.question;
-          if (!blankQuestion.includes('_____')) {
-            blankQuestion = blankQuestion.replace(/\?$/, '') + ': _____';
-          }
+          const fibQuestion = aiData.questions.fillInTheBlank[0];
+          console.log('✅ Got fill-in-blank question from AI:', fibQuestion);
+          
+          // Fill-in-blank questions use 'sentence' field, not 'question'
           newQuestionData = {
-            question: blankQuestion,
-            answer: correctAnswer
+            question: fibQuestion.sentence || fibQuestion.question || '',
+            answer: fibQuestion.answer || ''
           };
+          
+          console.log('🔄 Mapped fill-in-blank fields:', newQuestionData);
         } else if (aiData.questions?.identification?.length > 0) {
-          // Fallback: Convert identification to fill-in-blank
+          // Prefer identification for fill-in-blank (more compatible)
           const identQuestion = aiData.questions.identification[0];
           console.warn('⚠️ AI generated identification instead of fill-in-blank, converting...');
-          newQuestionData = {
-            question: identQuestion.question,
-            answer: identQuestion.answer || 'Answer'
-          };
+          console.log('Identification question data:', identQuestion);
+          
+          // Ensure we have an answer
+          const answer = identQuestion.answer || identQuestion.correctAnswer || '';
+          
+          if (!answer || answer.trim() === '') {
+            console.error('Identification question has no answer');
+            // Try multiple choice as last resort
+            if (aiData.questions?.multipleChoice?.length > 0) {
+              const mcQuestion = aiData.questions.multipleChoice[0];
+              console.warn('⚠️ Trying multiple choice as fallback...');
+              
+              if (mcQuestion.options && mcQuestion.options.length > 0 && 
+                  mcQuestion.correctAnswerIndex !== undefined && mcQuestion.correctAnswerIndex !== null) {
+                const correctAnswer = mcQuestion.options[mcQuestion.correctAnswerIndex];
+                if (correctAnswer && correctAnswer.trim() !== '') {
+                  let blankQuestion = mcQuestion.question;
+                  if (!blankQuestion.includes('_____')) {
+                    blankQuestion = blankQuestion.replace(/\?$/, '') + ': _____';
+                  }
+                  newQuestionData = {
+                    question: blankQuestion,
+                    answer: correctAnswer
+                  };
+                  console.log('🔄 Converted MC to fill-in-blank:', newQuestionData);
+                }
+              }
+            }
+            
+            if (!newQuestionData) {
+              throw new Error('Cannot convert: No valid answer found in any question type');
+            }
+          } else {
+            // Successfully got identification question with answer
+            let blankQuestion = identQuestion.question;
+            // Add blank if not present
+            if (!blankQuestion.includes('_____')) {
+              blankQuestion = blankQuestion.replace(/\?$/, '') + ': _____';
+            }
+            
+            newQuestionData = {
+              question: blankQuestion,
+              answer: answer
+            };
+            
+            console.log('🔄 Converted identification to fill-in-blank:', newQuestionData);
+          }
+        } else if (aiData.questions?.multipleChoice?.length > 0) {
+          // Last resort: try multiple choice
+          const mcQuestion = aiData.questions.multipleChoice[0];
+          console.warn('⚠️ Only multiple choice available, attempting conversion...');
+          console.log('MC Question data:', mcQuestion);
+          
+          // Validate we have the necessary data
+          if (!mcQuestion.options || mcQuestion.options.length === 0) {
+            console.error('MC question has no options');
+            throw new Error('Cannot convert: Multiple choice question has no answer options');
+          }
+          
+          if (mcQuestion.correctAnswerIndex === undefined || mcQuestion.correctAnswerIndex === null) {
+            console.error('MC question has no correct answer index');
+            throw new Error('Cannot convert: Multiple choice question has no correct answer. Try regenerating again or manually edit the question.');
+          }
+          
+          // Use the correct answer from the multiple choice
+          const correctAnswer = mcQuestion.options[mcQuestion.correctAnswerIndex];
+          
+          if (!correctAnswer || correctAnswer.trim() === '') {
+            console.error('Correct answer is empty');
+            
+            // Last resort: Create a simple fill-in-blank from the question text
+            console.warn('⚠️ Creating fallback fill-in-blank question...');
+            const fallbackQuestion = mcQuestion.question.replace(/\?$/, '') + ': _____';
+            const fallbackAnswer = 'Answer'; // Generic placeholder
+            
+            newQuestionData = {
+              question: fallbackQuestion,
+              answer: fallbackAnswer
+            };
+            
+            console.log('🔄 Created fallback fill-in-blank (please edit manually):', newQuestionData);
+          } else {
+            // Modify the question to be fill-in-blank style
+            let blankQuestion = mcQuestion.question;
+            if (!blankQuestion.includes('_____')) {
+              blankQuestion = blankQuestion.replace(/\?$/, '') + ': _____';
+            }
+            
+            newQuestionData = {
+              question: blankQuestion,
+              answer: correctAnswer
+            };
+            
+            console.log('🔄 Converted to fill-in-blank:', { question: blankQuestion, answer: correctAnswer });
+          }
         }
       }
 
@@ -509,40 +623,59 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
         if (aiData.questions?.fillInTheBlank?.length > 0) availableTypes.push('fill-in-blank');
         if (aiData.questions?.identification?.length > 0) availableTypes.push('identification');
         
-        let errorMessage = 'AI could not generate a question of this type.';
+        // Last resort: Create a basic question based on the original question
+        console.warn('⚠️ Creating emergency fallback question...');
         
-        if (availableTypes.length > 0) {
-          errorMessage += ` Try regenerating or manually edit the question. (AI generated: ${availableTypes.join(', ')})`;
+        if (question.questionType === 'fill-in-blank') {
+          // Create a simple fill-in-blank question
+          newQuestionData = {
+            question: `Complete the following about ${quiz.title}: _____`,
+            answer: 'Please edit this answer'
+          };
+          console.log('🆘 Created emergency fill-in-blank question');
+        } else if (question.questionType === 'true-false') {
+          // Create a simple true/false question
+          newQuestionData = {
+            question: `${quiz.title} is an important topic in this subject`,
+            answer: 'True'
+          };
+          console.log('🆘 Created emergency true/false question');
         } else {
-          errorMessage += ' The quiz needs more context. Try adding a detailed description to your quiz or ensure the source document has enough content.';
+          // Create a simple multiple choice question
+          newQuestionData = {
+            question: `What is ${quiz.title}?`,
+            options: ['Option A', 'Option B', 'Option C', 'Option D'],
+            correctAnswerIndex: 0
+          };
+          console.log('🆘 Created emergency multiple-choice question');
         }
         
-        throw new Error(errorMessage);
+        showModal('Warning', 'AI could not generate a proper question. A placeholder has been created. Please edit it manually to add proper content.', 'warning');
       }
 
       console.log('✨ Generated question data:', newQuestionData);
 
       // Prepare the update data based on question type
       let updateData: any = {
-        questionText: newQuestionData.question || newQuestionData.questionText || '',
+        questionText: (newQuestionData as any).question || (newQuestionData as any).questionText || '',
         questionType: question.questionType,
       };
 
       if (question.questionType === 'fill-in-blank') {
         updateData.answerChoices = [];
-        updateData.correctAnswer = newQuestionData.answer || newQuestionData.correctAnswer || '';
+        updateData.correctAnswer = (newQuestionData as any).answer || (newQuestionData as any).correctAnswer || '';
         
         if (!updateData.correctAnswer) {
           throw new Error('Generated question is missing the answer');
         }
       } else if (question.questionType === 'true-false') {
         updateData.answerChoices = ['True', 'False'];
-        const answer = newQuestionData.answer || newQuestionData.correctAnswer;
+        const answer = (newQuestionData as any).answer || (newQuestionData as any).correctAnswer;
         updateData.correctAnswer = (answer === 'True' || answer === true || answer === 0) ? 0 : 1;
       } else {
         // multiple-choice
-        updateData.answerChoices = newQuestionData.options || newQuestionData.answerChoices || [];
-        updateData.correctAnswer = newQuestionData.correctAnswerIndex ?? newQuestionData.correctAnswer ?? 0;
+        updateData.answerChoices = (newQuestionData as any).options || (newQuestionData as any).answerChoices || [];
+        updateData.correctAnswer = (newQuestionData as any).correctAnswerIndex ?? (newQuestionData as any).correctAnswer ?? 0;
         
         if (!updateData.answerChoices || updateData.answerChoices.length < 2) {
           throw new Error('Generated question is missing answer choices');
