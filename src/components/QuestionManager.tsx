@@ -417,20 +417,81 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
       } else if (question.questionType === 'true-false') {
         if (aiData.questions?.trueFalse?.length > 0) {
           newQuestionData = aiData.questions.trueFalse[0];
-        } else if (aiData.questions?.identification?.length > 0) {
-          // Fallback: Convert identification to true/false
-          const identQuestion = aiData.questions.identification[0];
+          console.log('✅ Got true/false question from AI');
+        } else if (aiData.questions?.multipleChoice?.length > 0) {
+          // Fallback: Convert multiple choice to true/false statement
+          const mcQuestion = aiData.questions.multipleChoice[0];
+          console.warn('⚠️ AI generated multiple choice instead of true/false, converting...');
+          
+          // Get the correct answer
+          const correctAnswer = mcQuestion.options[mcQuestion.correctAnswerIndex];
+          
+          // Convert question to a statement format
+          let statement = mcQuestion.question;
+          
+          // Remove question marks and convert to statement
+          statement = statement.replace(/\?$/, '');
+          
+          // Try to convert "What is..." or "Which..." questions to statements
+          if (statement.match(/^(What|Which|Who|Where|When|How)\s+/i)) {
+            // Create a statement using the correct answer
+            statement = statement.replace(/^(What|Which|Who|Where|When|How)\s+(is|are|was|were|does|do|did)\s+/i, '');
+            statement = `${statement} is ${correctAnswer}`;
+          } else if (statement.match(/^Is |^Are |^Was |^Were |^Does |^Do |^Did /i)) {
+            // Already in statement form, just remove the question format
+            statement = statement.replace(/^(Is|Are|Was|Were|Does|Do|Did)\s+/i, '');
+          } else {
+            // Default: create a statement with the correct answer
+            statement = `${statement}: ${correctAnswer}`;
+          }
+          
+          // Randomly decide if this should be true or false
+          const isTrue = Math.random() > 0.5;
+          
           newQuestionData = {
-            question: identQuestion.question,
+            question: statement,
+            answer: isTrue ? 'True' : 'False'
+          };
+          
+          console.log('🔄 Converted to T/F statement:', statement);
+        } else if (aiData.questions?.identification?.length > 0) {
+          // Fallback: Convert identification to true/false statement
+          const identQuestion = aiData.questions.identification[0];
+          console.warn('⚠️ AI generated identification instead of true/false, converting...');
+          
+          // Create a statement using the answer
+          let statement = identQuestion.question.replace(/\?$/, '');
+          statement = statement.replace(/^(What|Which|Who|Where|When|How)\s+(is|are|was|were)\s+/i, '');
+          statement = `${statement} is ${identQuestion.answer}`;
+          
+          newQuestionData = {
+            question: statement,
             answer: 'True'
           };
         }
       } else if (question.questionType === 'fill-in-blank') {
         if (aiData.questions?.fillInTheBlank?.length > 0) {
           newQuestionData = aiData.questions.fillInTheBlank[0];
+          console.log('✅ Got fill-in-blank question from AI');
+        } else if (aiData.questions?.multipleChoice?.length > 0) {
+          // Fallback: Convert multiple choice to fill-in-blank
+          const mcQuestion = aiData.questions.multipleChoice[0];
+          console.warn('⚠️ AI generated multiple choice instead of fill-in-blank, converting...');
+          // Use the correct answer from the multiple choice
+          const correctAnswer = mcQuestion.options[mcQuestion.correctAnswerIndex];
+          // Modify the question to be fill-in-blank style
+          let blankQuestion = mcQuestion.question;
+          if (!blankQuestion.includes('_____')) {
+            blankQuestion = blankQuestion.replace(/\?$/, '') + ': _____';
+          }
+          newQuestionData = {
+            question: blankQuestion,
+            answer: correctAnswer
+          };
         } else if (aiData.questions?.identification?.length > 0) {
           // Fallback: Convert identification to fill-in-blank
           const identQuestion = aiData.questions.identification[0];
+          console.warn('⚠️ AI generated identification instead of fill-in-blank, converting...');
           newQuestionData = {
             question: identQuestion.question,
             answer: identQuestion.answer || 'Answer'
