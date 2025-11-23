@@ -295,25 +295,44 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
         }
         
         // Add the current question as context to help AI understand the topic
-        contextParts.push(`Example question: ${question.questionText}`);
+        contextParts.push(`Current question: ${question.questionText}`);
+        
+        // Add answer choices for more context
+        if (question.answerChoices && question.answerChoices.length > 0) {
+          contextParts.push(`Answer options: ${question.answerChoices.join(', ')}`);
+        }
         
         // Add other questions as additional context
         const otherQuestions = questions
           .filter(q => q._id !== questionToRegenerate)
-          .slice(0, 3) // Use up to 3 other questions for context
-          .map(q => q.questionText);
+          .slice(0, 5) // Use up to 5 other questions for better context
+          .map(q => {
+            let qText = q.questionText;
+            if (q.answerChoices && q.answerChoices.length > 0) {
+              qText += ` (Options: ${q.answerChoices.slice(0, 2).join(', ')})`;
+            }
+            return qText;
+          });
         
         if (otherQuestions.length > 0) {
-          contextParts.push(`Related topics: ${otherQuestions.join('. ')}`);
+          contextParts.push(`Related questions: ${otherQuestions.join('. ')}`);
         }
+        
+        // Build the context
+        context = contextParts.join('. ');
         
         // Ensure we have enough text (minimum 50 characters required by API)
-        context = contextParts.join('. ');
         if (context.length < 50) {
-          context = `${context}. This is an educational quiz about ${quiz.title}. Generate relevant questions that test understanding of this topic.`;
+          context = `${context}. This is an educational quiz about ${quiz.title}. Generate relevant questions that test understanding of this topic. The questions should be clear, educational, and appropriate for students learning about ${quiz.title}.`;
         }
         
-        console.log('🔄 Regenerating question with fallback context:', context.substring(0, 100) + '...');
+        // Add more padding if still too short
+        if (context.length < 100) {
+          context += ` Create questions that assess comprehension, application, and analysis of key concepts related to ${quiz.title}. Ensure questions are well-structured and have clear, unambiguous answers.`;
+        }
+        
+        console.log('🔄 Regenerating question with fallback context:', context.substring(0, 150) + '...');
+        console.log('📏 Context length:', context.length, 'characters');
       }
       
       // Determine question types to request based on current question type
@@ -348,6 +367,11 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
 
       const aiData = await aiResponse.json();
       console.log('📊 AI Response:', aiData);
+      
+      // Check if we got any questions at all
+      if (!aiData.questions) {
+        throw new Error('No questions returned from AI. Please try again or add more context to your quiz.');
+      }
       
       // Extract the generated question based on type
       let newQuestionData;
@@ -416,7 +440,23 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ quiz, onBack }) => {
 
       if (!newQuestionData) {
         console.error('No question data found in response:', aiData);
-        throw new Error('AI could not generate a question. The quiz topic might need more context. Try adding a description to your quiz.');
+        
+        // Provide more specific error message based on what's available
+        const availableTypes = [];
+        if (aiData.questions?.multipleChoice?.length > 0) availableTypes.push('multiple-choice');
+        if (aiData.questions?.trueFalse?.length > 0) availableTypes.push('true-false');
+        if (aiData.questions?.fillInTheBlank?.length > 0) availableTypes.push('fill-in-blank');
+        if (aiData.questions?.identification?.length > 0) availableTypes.push('identification');
+        
+        let errorMessage = 'AI could not generate a question of this type.';
+        
+        if (availableTypes.length > 0) {
+          errorMessage += ` Try regenerating or manually edit the question. (AI generated: ${availableTypes.join(', ')})`;
+        } else {
+          errorMessage += ' The quiz needs more context. Try adding a detailed description to your quiz or ensure the source document has enough content.';
+        }
+        
+        throw new Error(errorMessage);
       }
 
       console.log('✨ Generated question data:', newQuestionData);
