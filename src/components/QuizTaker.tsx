@@ -91,7 +91,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
       const deadline = new Date(quiz.deadline);
       const now = new Date();
       if (now > deadline) {
-        showModal('Quiz Closed', 'The deadline for this quiz has passed. You can no longer submit answers.', 'warning');
+        showModal('Quiz Unavailable', 'The deadline for this quiz has passed. You can no longer submit answers.', 'warning');
         setAlreadyCompleted(true);
         return;
       }
