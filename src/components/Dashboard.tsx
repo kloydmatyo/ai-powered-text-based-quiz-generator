@@ -65,6 +65,8 @@ const Dashboard: React.FC = () => {
     averageScore: 0,
     engagement: 0
   });
+  const [weeklyPerformance, setWeeklyPerformance] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
+  const [quizPerformance, setQuizPerformance] = useState<{ quizId: string; title: string; avgScore: number }[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [editingUsername, setEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState('');
@@ -112,7 +114,15 @@ const Dashboard: React.FC = () => {
     fetchNotifications();
     fetchSubmissionCounts();
     fetchLearnerSubmissions();
+    calculateAnalytics();
   }, []);
+
+  // Recalculate analytics when switching to analytics view
+  useEffect(() => {
+    if (activeView === 'analytics') {
+      calculateAnalytics();
+    }
+  }, [activeView]);
 
   // Separate effect for polling that checks modal state
   useEffect(() => {
@@ -293,6 +303,71 @@ const Dashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching learner submissions:', error);
+    }
+  };
+
+  const calculateAnalytics = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/quiz-submissions', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const submissions = data.submissions || [];
+        
+        // Calculate weekly performance (last 7 days)
+        const today = new Date();
+        const weeklyScores: number[] = [0, 0, 0, 0, 0, 0, 0];
+        const weeklyCounts: number[] = [0, 0, 0, 0, 0, 0, 0];
+        
+        submissions.forEach((sub: any) => {
+          const subDate = new Date(sub.submittedAt || sub.createdAt);
+          const daysDiff = Math.floor((today.getTime() - subDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysDiff >= 0 && daysDiff < 7) {
+            const dayIndex = 6 - daysDiff; // Most recent day is index 6
+            weeklyScores[dayIndex] += sub.score || 0;
+            weeklyCounts[dayIndex]++;
+          }
+        });
+        
+        // Calculate averages
+        const weeklyAvg = weeklyScores.map((total, i) => 
+          weeklyCounts[i] > 0 ? Math.round(total / weeklyCounts[i]) : 0
+        );
+        setWeeklyPerformance(weeklyAvg);
+        
+        // Calculate quiz performance
+        const quizScores: { [quizId: string]: { title: string; scores: number[] } } = {};
+        
+        submissions.forEach((sub: any) => {
+          const quizId = sub.quizId?._id || sub.quizId;
+          const quizTitle = sub.quizId?.title || 'Unknown Quiz';
+          
+          if (quizId) {
+            if (!quizScores[quizId]) {
+              quizScores[quizId] = { title: quizTitle, scores: [] };
+            }
+            quizScores[quizId].scores.push(sub.score || 0);
+          }
+        });
+        
+        // Calculate average scores per quiz
+        const quizPerf = Object.entries(quizScores)
+          .map(([quizId, data]) => ({
+            quizId,
+            title: data.title,
+            avgScore: Math.round(data.scores.reduce((a, b) => a + b, 0) / data.scores.length)
+          }))
+          .sort((a, b) => b.avgScore - a.avgScore)
+          .slice(0, 5);
+        
+        setQuizPerformance(quizPerf);
+      }
+    } catch (error) {
+      console.error('Error calculating analytics:', error);
     }
   };
 
@@ -4344,7 +4419,7 @@ const Dashboard: React.FC = () => {
               </div>
               
               <div className="h-72 flex items-end justify-around gap-3">
-                {[65, 78, 82, 71, 88, 75, 92].map((value, index) => (
+                {weeklyPerformance.map((value, index) => (
                   <div key={index} className="flex-1 flex flex-col items-center gap-3 group">
                     <div 
                       className="relative w-full rounded-t-2xl overflow-hidden transition-all duration-300 group-hover:scale-105"
@@ -4353,7 +4428,7 @@ const Dashboard: React.FC = () => {
                       <div 
                         className="absolute bottom-0 w-full rounded-t-2xl transition-all duration-500"
                         style={{ 
-                          height: `${value}%`,
+                          height: `${Math.max(value, 5)}%`, // Minimum 5% for visibility
                           background: `linear-gradient(to top, ${
                             value >= 85 ? '#34D399' : value >= 70 ? '#8B5CF6' : '#4F46E5'
                           }, ${
@@ -4371,7 +4446,9 @@ const Dashboard: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <span className="text-xs text-gray-400 font-medium">Day {index + 1}</span>
+                    <span className="text-xs text-gray-400 font-medium">
+                      {new Date(Date.now() - (6 - index) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'short' })}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -4408,11 +4485,10 @@ const Dashboard: React.FC = () => {
                 </div>
                 
                 <div className="space-y-3">
-                  {quizzes.slice(0, 5).map((quiz, index) => {
-                    const score = Math.floor(Math.random() * 30) + 70;
-                    return (
+                  {quizPerformance.length > 0 ? (
+                    quizPerformance.map((perf, index) => (
                       <div 
-                        key={quiz._id} 
+                        key={perf.quizId} 
                         className="flex items-center justify-between p-4 rounded-xl transition-all duration-200 hover:scale-[1.02]"
                         style={{
                           background: 'rgba(79, 70, 229, 0.1)',
@@ -4431,20 +4507,25 @@ const Dashboard: React.FC = () => {
                           >
                             {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '📝'}
                           </div>
-                          <span className="text-white font-medium truncate">{quiz.title}</span>
+                          <span className="text-white font-medium truncate">{perf.title}</span>
                         </div>
                         <span 
                           className="px-4 py-2 rounded-lg font-bold text-sm flex-shrink-0"
                           style={{
-                            backgroundColor: score >= 85 ? 'rgba(52, 211, 153, 0.2)' : 'rgba(139, 92, 246, 0.2)',
-                            color: score >= 85 ? '#34D399' : '#A78BFA'
+                            backgroundColor: perf.avgScore >= 85 ? 'rgba(52, 211, 153, 0.2)' : 'rgba(139, 92, 246, 0.2)',
+                            color: perf.avgScore >= 85 ? '#34D399' : '#A78BFA'
                           }}
                         >
-                          {score}%
+                          {perf.avgScore}%
                         </span>
                       </div>
-                    );
-                  })}
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-400">
+                      <p>No quiz submissions yet</p>
+                      <p className="text-sm mt-2">Performance data will appear here once students start taking quizzes</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
