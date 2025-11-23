@@ -41,12 +41,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
     try {
       const result = await register(email, name, password, 'learner');
-      setSuccess('Registration successful! Please check your email to verify your account before signing in.');
-      // Clear form
-      setName('');
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
+      // Store email for the login page to show success message
+      sessionStorage.setItem('registrationSuccess', 'true');
+      sessionStorage.setItem('registeredEmail', email);
+      // Redirect to login page
+      setTimeout(() => {
+        onSwitchToLogin();
+      }, 500);
     } catch (error: any) {
       setError(error.message);
     } finally {

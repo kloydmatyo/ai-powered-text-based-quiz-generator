@@ -15,10 +15,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [resendingVerification, setResendingVerification] = useState(false);
   
   const { login } = useAuth();
 
-  // Check for OAuth errors and verification success in URL
+  // Check for OAuth errors, verification success, and registration success
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const errorParam = urlParams.get('error');
@@ -33,7 +36,49 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
       setSuccess('Email verified successfully! You can now sign in.');
       window.history.replaceState({}, '', window.location.pathname);
     }
+
+    // Check for registration success
+    const registrationSuccess = sessionStorage.getItem('registrationSuccess');
+    const storedEmail = sessionStorage.getItem('registeredEmail');
+    
+    if (registrationSuccess === 'true' && storedEmail) {
+      setShowRegistrationSuccess(true);
+      setRegisteredEmail(storedEmail);
+      setEmail(storedEmail); // Pre-fill email field
+      // Clear session storage
+      sessionStorage.removeItem('registrationSuccess');
+      sessionStorage.removeItem('registeredEmail');
+    }
   }, []);
+
+  const handleResendVerification = async () => {
+    setResendingVerification(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: registeredEmail || email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccess('Verification email sent! Please check your inbox.');
+        setShowRegistrationSuccess(false);
+      } else {
+        setError(data.error || 'Failed to resend verification email');
+      }
+    } catch (error) {
+      setError('Failed to resend verification email. Please try again.');
+    } finally {
+      setResendingVerification(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,33 +95,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
     }
   };
 
-  const handleResendVerification = async () => {
-    if (!email) {
-      setError('Please enter your email address');
-      return;
-    }
 
-    try {
-      const response = await fetch('/api/auth/resend-verification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess('Verification email sent! Please check your inbox.');
-        setError('');
-      } else {
-        setError(data.error || 'Failed to send verification email');
-      }
-    } catch (error) {
-      setError('Network error. Please try again.');
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden py-4" style={{ backgroundColor: '#0F172A' }}>
@@ -119,6 +138,34 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
             <p className="text-gray-400 text-xs">Sign in to continue</p>
           </div>
 
+          {/* Registration Success Message */}
+          {showRegistrationSuccess && (
+            <div className="mb-3 p-4 rounded-lg border-2" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', borderColor: 'rgba(34, 197, 94, 0.3)' }}>
+              <div className="flex items-start gap-2 mb-2">
+                <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-green-300 text-sm font-semibold mb-1">Account Created Successfully!</p>
+                  <p className="text-green-200 text-xs mb-2">
+                    Please check your email <span className="font-medium">({registeredEmail})</span> to verify your account before signing in.
+                  </p>
+                  <div className="bg-green-900/20 rounded p-2 mt-2">
+                    <p className="text-green-200 text-xs mb-2">Didn't receive the verification email?</p>
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      disabled={resendingVerification}
+                      className="text-xs font-medium text-green-400 hover:text-green-300 underline disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {resendingVerification ? 'Sending...' : 'Resend Verification Email'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Success Message */}
           {success && (
             <div className="mb-3 p-3 rounded-lg border-2" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', borderColor: 'rgba(34, 197, 94, 0.3)' }}>
@@ -132,10 +179,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
               <p className="text-red-300 text-xs font-medium">{error}</p>
               {error.includes('verify your email') && (
                 <button
+                  type="button"
                   onClick={handleResendVerification}
-                  className="mt-2 text-xs text-red-400 hover:text-red-300 underline"
+                  disabled={resendingVerification}
+                  className="mt-2 text-xs text-red-400 hover:text-red-300 underline disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Resend verification email
+                  {resendingVerification ? 'Sending...' : 'Resend verification email'}
                 </button>
               )}
             </div>
