@@ -3640,17 +3640,29 @@ const Dashboard: React.FC = () => {
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {quizzes.slice(0, 6).map((quiz) => (
+                {quizzes.slice(0, 6).map((quiz) => {
+                  const isExpired = quiz.deadline && new Date(quiz.deadline) < new Date();
+                  const canTakeQuiz = user?.role === 'instructor' || !isExpired;
+                  
+                  return (
                   <div 
                     key={quiz._id}
-                    className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl cursor-pointer flex flex-col"
+                    className={`group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 flex flex-col ${
+                      canTakeQuiz ? 'hover:scale-[1.02] hover:shadow-2xl cursor-pointer' : 'opacity-60 cursor-not-allowed'
+                    }`}
                     style={{
                       background: 'rgba(15, 23, 42, 0.6)',
-                      borderColor: 'rgba(79, 70, 229, 0.2)',
+                      borderColor: isExpired && user?.role === 'learner' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(79, 70, 229, 0.2)',
                       boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)',
                       minHeight: '320px'
                     }}
-                    onClick={() => setSelectedQuiz(quiz)}
+                    onClick={() => {
+                      if (canTakeQuiz) {
+                        setSelectedQuiz(quiz);
+                      } else {
+                        showModal('Quiz Expired', 'The deadline for this quiz has passed. You can no longer take this quiz.', 'warning');
+                      }
+                    }}
                   >
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                       style={{
@@ -3679,9 +3691,24 @@ const Dashboard: React.FC = () => {
                         {quiz.title}
                       </h4>
                       
-                      {/* Submitted badge for learners */}
+                      {/* Status badges for learners */}
                       {user?.role === 'learner' && (
-                        <div className="mb-3 min-h-[28px]">
+                        <div className="mb-3 min-h-[28px] flex flex-wrap gap-2">
+                          {isExpired && (
+                            <span 
+                              className="text-xs font-semibold px-2 py-1 rounded-lg inline-flex items-center gap-1"
+                              style={{
+                                background: 'rgba(239, 68, 68, 0.2)',
+                                border: '1px solid rgba(239, 68, 68, 0.4)',
+                                color: '#F87171'
+                              }}
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Expired
+                            </span>
+                          )}
                           {learnerSubmissions[quiz._id] && (
                             <span 
                               className="text-xs font-semibold px-2 py-1 rounded-lg inline-flex items-center gap-1"
@@ -3728,14 +3755,21 @@ const Dashboard: React.FC = () => {
                       
                       <div className="flex gap-2 mt-auto">
                         <button 
-                          className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105"
+                          disabled={!canTakeQuiz}
+                          className={`flex-1 px-4 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 ${
+                            canTakeQuiz ? 'transform hover:scale-105' : 'opacity-50 cursor-not-allowed'
+                          }`}
                           style={{
-                            background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
-                            boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                            background: canTakeQuiz ? 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)' : 'rgba(79, 70, 229, 0.5)',
+                            boxShadow: canTakeQuiz ? '0 4px 12px rgba(79, 70, 229, 0.3)' : 'none'
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedQuiz(quiz);
+                            if (canTakeQuiz) {
+                              setSelectedQuiz(quiz);
+                            } else {
+                              showModal('Quiz Expired', 'The deadline for this quiz has passed. You can no longer take this quiz.', 'warning');
+                            }
                           }}
                         >
                           {user?.role === 'instructor' 
@@ -3766,7 +3800,8 @@ const Dashboard: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
               
               {quizzes.length === 0 && (
@@ -3965,15 +4000,28 @@ const Dashboard: React.FC = () => {
               return (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredQuizzes.map((quiz) => (
+                    {filteredQuizzes.map((quiz) => {
+                      const isExpired = quiz.deadline && new Date(quiz.deadline) < new Date();
+                      const canTakeQuiz = user?.role === 'instructor' || !isExpired;
+                      
+                      return (
                 <div 
                   key={quiz._id}
-                  className="group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl flex flex-col"
+                  className={`group relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 flex flex-col ${
+                    canTakeQuiz ? 'hover:scale-[1.02] hover:shadow-2xl cursor-pointer' : 'opacity-60 cursor-not-allowed'
+                  }`}
                   style={{
                     background: 'rgba(15, 23, 42, 0.6)',
-                    borderColor: 'rgba(79, 70, 229, 0.2)',
+                    borderColor: isExpired && user?.role === 'learner' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(79, 70, 229, 0.2)',
                     boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)',
                     minHeight: '340px'
+                  }}
+                  onClick={() => {
+                    if (canTakeQuiz) {
+                      setSelectedQuiz(quiz);
+                    } else {
+                      showModal('Quiz Expired', 'The deadline for this quiz has passed. You can no longer take this quiz.', 'warning');
+                    }
                   }}
                 >
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -4021,6 +4069,21 @@ const Dashboard: React.FC = () => {
                               📚 {classItem.name}
                             </span>
                           ))}
+                        {isExpired && (
+                          <span 
+                            className="text-xs font-semibold px-2 py-1 rounded-lg flex items-center gap-1 h-fit"
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.2)',
+                              border: '1px solid rgba(239, 68, 68, 0.4)',
+                              color: '#F87171'
+                            }}
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Expired
+                          </span>
+                        )}
                         {learnerSubmissions[quiz._id] && (
                           <span 
                             className="text-xs font-semibold px-2 py-1 rounded-lg flex items-center gap-1 h-fit"
@@ -4086,11 +4149,21 @@ const Dashboard: React.FC = () => {
                     
                     <div className="flex gap-2 mt-auto">
                       <button 
-                        onClick={() => setSelectedQuiz(quiz)}
-                        className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105"
+                        disabled={!canTakeQuiz}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (canTakeQuiz) {
+                            setSelectedQuiz(quiz);
+                          } else {
+                            showModal('Quiz Expired', 'The deadline for this quiz has passed. You can no longer take this quiz.', 'warning');
+                          }
+                        }}
+                        className={`flex-1 px-4 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 ${
+                          canTakeQuiz ? 'transform hover:scale-105' : 'opacity-50 cursor-not-allowed'
+                        }`}
                         style={{
-                          background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
-                          boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                          background: canTakeQuiz ? 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)' : 'rgba(79, 70, 229, 0.5)',
+                          boxShadow: canTakeQuiz ? '0 4px 12px rgba(79, 70, 229, 0.3)' : 'none'
                         }}
                       >
                         {user?.role === 'instructor' 
@@ -4134,7 +4207,8 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   
                   {filteredQuizzes.length === 0 && (
