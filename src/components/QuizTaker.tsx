@@ -131,7 +131,9 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
           }));
           
           if (newTime <= 0) {
-            handleSubmit();
+            // Auto-submit when timer runs out - submits whatever answers exist
+            console.log('⏰ Timer expired - Auto-submitting quiz with answered questions...');
+            submitQuizToServer(true);
             return 0;
           }
           return newTime;
@@ -139,7 +141,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [submitted, alreadyCompleted, timeRemaining]);
+  }, [submitted, alreadyCompleted, timeRemaining, userAnswers, questions]);
 
   // Clear timer and index from localStorage when quiz is submitted
   useEffect(() => {
@@ -296,14 +298,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
     }
   };
 
-  const handleSubmit = async () => {
-    const unansweredQuestions = getUnansweredQuestions();
-
-    if (unansweredQuestions.length > 0) {
-      showModal('Incomplete Quiz', 'Please answer all questions before submitting.', 'warning');
-      return;
-    }
-
+  const submitQuizToServer = async (isAutoSubmit = false) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/quiz-submissions', {
@@ -343,6 +338,16 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
         });
         setQuestions(updatedQuestions);
         setShowResults(true);
+
+        if (isAutoSubmit) {
+          const answeredCount = Object.keys(userAnswers).length;
+          const totalCount = questions.length;
+          showModal(
+            'Time\'s Up!', 
+            `The quiz time has expired. Your quiz has been automatically submitted with ${answeredCount} out of ${totalCount} questions answered.`, 
+            'warning'
+          );
+        }
       } else {
         showModal('Error', 'Failed to submit quiz. Please try again.', 'error');
       }
@@ -350,6 +355,17 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
       console.error('Error submitting quiz:', error);
       showModal('Error', 'An error occurred while submitting the quiz.', 'error');
     }
+  };
+
+  const handleSubmit = async () => {
+    const unansweredQuestions = getUnansweredQuestions();
+
+    if (unansweredQuestions.length > 0) {
+      showModal('Incomplete Quiz', 'Please answer all questions before submitting.', 'warning');
+      return;
+    }
+
+    await submitQuizToServer(false);
   };
 
   if (loading) {
@@ -770,7 +786,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
               </div>
               {!submitted && !alreadyCompleted && (
                 <div 
-                  className="px-4 py-2 rounded-xl font-bold text-sm md:text-base flex items-center gap-2"
+                  className={`px-4 py-2 rounded-xl font-bold text-sm md:text-base flex items-center gap-2 ${timeRemaining <= 60 ? 'animate-pulse' : ''}`}
                   style={{
                     backgroundColor: timeRemaining < 300 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(79, 70, 229, 0.2)',
                     border: timeRemaining < 300 ? '2px solid rgba(239, 68, 68, 0.4)' : '2px solid rgba(79, 70, 229, 0.3)',
@@ -781,6 +797,9 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   {formatTime(timeRemaining)}
+                  {timeRemaining <= 60 && timeRemaining > 0 && (
+                    <span className="text-xs ml-1">(Time’s almost up—auto-submit in…)</span>
+                  )}
                 </div>
               )}
             </div>
