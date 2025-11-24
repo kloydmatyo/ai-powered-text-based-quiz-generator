@@ -3793,17 +3793,18 @@ const Dashboard: React.FC = () => {
                       
                       <div className="flex gap-2 mt-auto">
                         <button 
-                          disabled={!canTakeQuiz}
+                          disabled={!canTakeQuiz && !learnerSubmissions[quiz._id]}
                           className={`flex-1 px-4 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 ${
-                            canTakeQuiz ? 'transform hover:scale-105' : 'opacity-50 cursor-not-allowed'
+                            (canTakeQuiz || learnerSubmissions[quiz._id]) ? 'transform hover:scale-105' : 'opacity-50 cursor-not-allowed'
                           }`}
                           style={{
-                            background: canTakeQuiz ? 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)' : 'rgba(79, 70, 229, 0.5)',
-                            boxShadow: canTakeQuiz ? '0 4px 12px rgba(79, 70, 229, 0.3)' : 'none'
+                            background: (canTakeQuiz || learnerSubmissions[quiz._id]) ? 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)' : 'rgba(79, 70, 229, 0.5)',
+                            boxShadow: (canTakeQuiz || learnerSubmissions[quiz._id]) ? '0 4px 12px rgba(79, 70, 229, 0.3)' : 'none'
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (canTakeQuiz) {
+                            // Allow viewing results even after deadline if already submitted
+                            if (canTakeQuiz || learnerSubmissions[quiz._id]) {
                               setSelectedQuiz(quiz);
                             } else {
                               showModal('Quiz Unavailable', 'The deadline for this quiz has passed. You can no longer take this quiz.', 'warning');
@@ -4187,21 +4188,22 @@ const Dashboard: React.FC = () => {
                     
                     <div className="flex gap-2 mt-auto">
                       <button 
-                        disabled={!canTakeQuiz}
+                        disabled={!canTakeQuiz && !learnerSubmissions[quiz._id]}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (canTakeQuiz) {
+                          // Allow viewing results even after deadline if already submitted
+                          if (canTakeQuiz || learnerSubmissions[quiz._id]) {
                             setSelectedQuiz(quiz);
                           } else {
                             showModal('Quiz Unavailable', 'The deadline for this quiz has passed. You can no longer take this quiz.', 'warning');
                           }
                         }}
                         className={`flex-1 px-4 py-2.5 rounded-xl font-semibold text-white transition-all duration-200 ${
-                          canTakeQuiz ? 'transform hover:scale-105' : 'opacity-50 cursor-not-allowed'
+                          (canTakeQuiz || learnerSubmissions[quiz._id]) ? 'transform hover:scale-105' : 'opacity-50 cursor-not-allowed'
                         }`}
                         style={{
-                          background: canTakeQuiz ? 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)' : 'rgba(79, 70, 229, 0.5)',
-                          boxShadow: canTakeQuiz ? '0 4px 12px rgba(79, 70, 229, 0.3)' : 'none'
+                          background: (canTakeQuiz || learnerSubmissions[quiz._id]) ? 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)' : 'rgba(79, 70, 229, 0.5)',
+                          boxShadow: (canTakeQuiz || learnerSubmissions[quiz._id]) ? '0 4px 12px rgba(79, 70, 229, 0.3)' : 'none'
                         }}
                       >
                         {user?.role === 'instructor' 

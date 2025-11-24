@@ -86,17 +86,19 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
   };
 
   useEffect(() => {
-    // Check if quiz deadline has passed
+    // Check previous submission first
+    checkPreviousSubmission();
+    
+    // Check if quiz deadline has passed (but still allow viewing results)
     if (quiz.deadline) {
       const deadline = new Date(quiz.deadline);
       const now = new Date();
-      if (now > deadline) {
+      if (now > deadline && !alreadyCompleted) {
+        // Only show warning if they haven't submitted yet
         showModal('Quiz Unavailable', 'The deadline for this quiz has passed. You can no longer submit answers.', 'warning');
         setAlreadyCompleted(true);
-        return;
       }
     }
-    checkPreviousSubmission();
   }, [quiz._id]);
 
   useEffect(() => {
@@ -835,7 +837,7 @@ const QuizTaker: React.FC<QuizTakerProps> = ({ quiz, onBack }) => {
             <div className="flex items-center gap-3 justify-center">
               <svg className="w-6 h-6 text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
+              </svg>l
               <p className="text-indigo-200 text-center font-semibold text-lg">
                 You have already completed this quiz. Reviewing your submission.
               </p>
