@@ -4175,7 +4175,10 @@ const Dashboard: React.FC = () => {
                       {user?.role === 'instructor' && (
                         <>
                           <button 
-                            onClick={() => setViewingSubmissions(quiz)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingSubmissions(quiz);
+                            }}
                             className="px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
                             style={{
                               backgroundColor: 'rgba(139, 92, 246, 0.2)',
@@ -4189,7 +4192,10 @@ const Dashboard: React.FC = () => {
                             </svg>
                           </button>
                           <button 
-                            onClick={() => deleteQuiz(quiz._id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteQuiz(quiz._id);
+                            }}
                             className="px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
                             style={{
                               backgroundColor: 'rgba(239, 68, 68, 0.2)',
