@@ -107,14 +107,17 @@ const Dashboard: React.FC = () => {
   });
 
   useEffect(() => {
-    // Initial fetch
-    fetchQuizzes();
-    fetchStats();
-    fetchClasses();
-    fetchNotifications();
-    fetchSubmissionCounts();
-    fetchLearnerSubmissions();
-    calculateAnalytics();
+    // Initial fetch - fetch quizzes first, then stats with quiz count
+    const initializeData = async () => {
+      const quizCount = await fetchQuizzes();
+      await fetchStats(quizCount);
+      fetchClasses();
+      fetchNotifications();
+      fetchSubmissionCounts();
+      fetchLearnerSubmissions();
+      calculateAnalytics();
+    };
+    initializeData();
   }, []);
 
   // Recalculate analytics when switching to analytics view
@@ -123,6 +126,22 @@ const Dashboard: React.FC = () => {
       calculateAnalytics();
     }
   }, [activeView]);
+
+  // Update engagement when quizzes change (after initial load)
+  useEffect(() => {
+    if (quizzes.length > 0 && stats.totalPlays > 0) {
+      const engagementRate = parseFloat(Math.min(100, (stats.totalPlays / quizzes.length) * 20).toFixed(2));
+      setStats(prev => {
+        // Only update if engagement changed to avoid infinite loop
+        if (prev.engagement !== engagementRate) {
+          return { ...prev, engagement: engagementRate };
+        }
+        return prev;
+      });
+    }
+  }, [quizzes.length]);
+
+
 
   // Separate effect for polling that checks modal state
   useEffect(() => {
@@ -412,7 +431,7 @@ const Dashboard: React.FC = () => {
     );
   };
 
-  const fetchQuizzes = async (showSync = false) => {
+  const fetchQuizzes = async (showSync = false): Promise<number> => {
     try {
       if (showSync) setIsSyncing(true);
       const token = localStorage.getItem('token');
@@ -439,9 +458,13 @@ const Dashboard: React.FC = () => {
         setQuizzes(newQuizzes);
         setStats(prev => ({ ...prev, totalQuizzes: newQuizzes.length }));
         if (showSync) setLastSyncTime(new Date());
+        
+        return newQuizzes.length;
       }
+      return 0;
     } catch (error) {
       console.error('Error fetching quizzes:', error);
+      return 0;
     } finally {
       setLoading(false);
       if (showSync) {
@@ -450,7 +473,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const fetchStats = async () => {
+  const fetchStats = async (quizCount?: number) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('/api/quiz-submissions', {
@@ -462,11 +485,26 @@ const Dashboard: React.FC = () => {
         const avgScore = submissions.length > 0 
           ? submissions.reduce((acc: number, sub: any) => acc + sub.score, 0) / submissions.length 
           : 0;
+        
+        // Use provided quiz count or current state
+        const totalQuizzes = quizCount !== undefined ? quizCount : quizzes.length;
+        
+        // Calculate engagement based on quiz count
+        const engagementRate = submissions.length > 0 && totalQuizzes > 0 
+          ? parseFloat(Math.min(100, (submissions.length / totalQuizzes) * 20).toFixed(2))
+          : 0;
+        
+        console.log('📊 Engagement calculation:', {
+          submissions: submissions.length,
+          quizzes: totalQuizzes,
+          engagement: engagementRate
+        });
+        
         setStats(prev => ({
           ...prev,
           totalPlays: submissions.length,
           averageScore: Math.round(avgScore),
-          engagement: submissions.length > 0 && quizzes.length > 0 ? Math.min(100, (submissions.length / quizzes.length) * 20) : 0
+          engagement: engagementRate
         }));
       }
     } catch (error) {
